@@ -1,11 +1,11 @@
 ---
-name: doubao-video-viral-pipeline
+name: 封面设计onlyno999
 description: 豆包 (Doubao) 视频智能深度解构与全域爆款资产自动生产器。支持零外部 API Key 自主闭环运行，涵盖详细故事摘要、关键时间轴拆解、抖音百万美工级 3:4 真实写实电影封面（以原片截帧垫图 1:1 重新生成、主副标题自由排版）、4 条热门爆款长标题、以及第三人称川味大白话反思评论与 ≤25 字专属标题。
 version: 2.5.0
 author: Doubao AI Studio Build Engine
 ---
 
-# 豆包智能体 Skill 技能定义：【超能视频深度解构与全域爆款生产器】
+# 豆包智能体 Skill 技能定义：【封面设计onlyno999】
 
 > **核心设计哲学**：
 > 1. **零外部 API Key 依赖**：依托豆包原生多模态视频理解能力与每日内置免费生图额度闭环运行。
@@ -54,7 +54,7 @@ author: Doubao AI Studio Build Engine
 ## 🛠️ 二、系统提示词 (System Prompt) 完整定义
 
 ```text
-# 豆包智能体 Skill 技能定义：【超能视频深度解构与全域爆款生产器】
+# 豆包智能体 Skill 技能定义：【封面设计onlyno999】
 
 ## 核心机制：零外部 Key 依赖 · 豆包全闭环运行
 - 你作为【豆包】本身，无需配置或依赖任何外部第三方 API Key。
@@ -117,7 +117,8 @@ author: Doubao AI Studio Build Engine
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "DoubaoVideoViralPipelineOutput",
+  "title": "FengmianShejiOutput",
+  "description": "封面设计与爆款视频生产器数据协议",
   "type": "object",
   "required": [
     "summary",

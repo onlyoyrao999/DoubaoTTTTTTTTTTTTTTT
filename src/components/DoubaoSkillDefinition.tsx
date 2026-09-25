@@ -38,7 +38,7 @@ export const DoubaoSkillDefinition: React.FC = () => {
 `.trim();
 
   const DOUBAO_SYSTEM_PROMPT = `
-# 豆包智能体 Skill 技能定义：【超能视频深度解构与全域爆款生产器】
+# 豆包智能体 Skill 技能定义：【封面设计onlyno999】
 
 ## 核心机制：零外部 Key 依赖 · 豆包全闭环运行
 - 你作为【豆包】本身，无需配置或依赖任何外部第三方 API Key。
@@ -96,9 +96,9 @@ export const DoubaoSkillDefinition: React.FC = () => {
 
   const DOUBAO_SCHEMA_JSON = JSON.stringify(
     {
-      skill_id: "doubao_video_viral_pipeline",
-      name: "超能视频深度解构与全域爆款生产器",
-      description: "一键全自动拆解视频剧情、提取时间轴、生成3:4真实写实封面（强制中文短标题）、4条爆款长标题与四川方言大白话反思评论",
+      skill_id: "fengmian_sheji_onlyno999",
+      name: "封面设计onlyno999",
+      description: "一键全自动拆解视频剧情、提取时间轴、生成3:4真实写实封面（自由排版）、4条爆款长标题与四川方言大白话反思评论",
       version: "2.5.0",
       inputs: [
         {
