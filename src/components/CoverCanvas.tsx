@@ -318,18 +318,24 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ctx.fillRect(i, -bannerHeight / 2 + 10, 12, bannerHeight - 20);
       }
 
-      // Title text rendering
+      // Title text rendering - Dynamic font sizing without word count limitation
+      const maxTitleWidth = width * 0.9 * 0.72;
       let fontSize = 92;
-      if (title.length > 5) fontSize = 78;
-      if (title.length > 7) fontSize = 66;
-
       ctx.font = `900 ${fontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+      let textWidth = ctx.measureText(title).width;
+
+      while (textWidth > maxTitleWidth && fontSize > 28) {
+        fontSize -= 3;
+        ctx.font = `900 ${fontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+        textWidth = ctx.measureText(title).width;
+      }
+
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       // Text 3D bottom extrusion
       ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillText(title, 0, 8);
+      ctx.fillText(title, 0, Math.max(4, fontSize * 0.08));
 
       // Main Text Fill
       ctx.fillStyle = theme.textColor;
@@ -337,7 +343,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
       // Crisp contrast stroke
       ctx.strokeStyle = theme.strokeColor;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = Math.max(2, fontSize * 0.05);
       ctx.strokeText(title, 0, 0);
 
       ctx.restore();
@@ -449,18 +455,18 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
     const is3D = artMode === '3d-cartoon';
     const stylePrefix = is3D
       ? '3D Pixar风格的仿真人高品质CG动画封面海报（规避暴力杂乱真实违规）'
-      : '电影级真实写实人物封面海报';
+      : '真人写实风格电影级封面海报';
 
     const positionDesc =
       titlePosition === 'bottom'
-        ? '画面底部留白处（沉底排版，严禁遮挡画面中人物面部、眼睛或核心动作）'
+        ? '画面底部空白留白处（尽量写在空白处，严禁遮挡人物人脸与眼神）'
         : titlePosition === 'middle'
-        ? '画面正中视觉冲击留白位'
+        ? '画面居中留白空白处（避开人脸）'
         : titlePosition === 'upper_middle'
-        ? '画面中上留白处'
-        : '画面顶部留白处（置顶排版，避免遮挡中下方人物动作）';
+        ? '画面中上留白空白处（避开人脸）'
+        : '画面顶部空白留白处（尽量写在空白处，严禁遮挡人物人脸与眼神）';
 
-    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：在${positionDesc}用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，面部表情不用刻意夸张，注重还原原片很原始的真实神情：${coverDesign.characterExpression}；强对比度高动态光影，极具视觉冲击力！`;
+    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；在${positionDesc}用醒目加粗艺术字体印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”（标题不限制字数，尽量写在空白处，不在他人脸就行）；电影级景深光影，真实感拉满！`;
     navigator.clipboard.writeText(doubaoDrawPrompt);
     setCopiedDoubaoDraw(true);
     setTimeout(() => setCopiedDoubaoDraw(false), 2500);
@@ -469,14 +475,14 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const handleCopy3dPrompt = () => {
     const positionDesc =
       titlePosition === 'bottom'
-        ? '画面底部留白处（沉底排版，严禁遮挡面部或关键道具）'
+        ? '画面底部留白空白处（沉底排版，严禁遮挡面部或关键道具）'
         : titlePosition === 'middle'
-        ? '画面正中视觉冲击位'
+        ? '画面正中视觉冲击位（避开人脸）'
         : titlePosition === 'upper_middle'
-        ? '画面中上留白处'
-        : '画面顶部留白处（置顶排版，避免遮挡中下部人物动作）';
+        ? '画面中上留白空白处（避开人脸）'
+        : '画面顶部留白空白处（置顶排版，避免遮挡中下部人物动作）';
 
-    const prompt3d = `@豆包 请以我上传的这张视频原片自动截图为垫图底图（以图生图）：因原画面触碰平台打斗/血腥/暴力敏感审核红线，直接发会被平台封禁！请严格参考截图中人物站位、骨相神态与核心动作，以图生图重新生成【3D Pixar 仿真人 CG 动画质感】人物封面（通过 3D 仿真人质感彻底规避真实暴力违规审查！），并在${positionDesc}醒目大字印上“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”，生成 3:4 比例超清 3D 仿真人海报！`;
+    const prompt3d = `@豆包 请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在${positionDesc}印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”（标题不限制字数，尽量写在空白处，不在他人脸就行）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
     navigator.clipboard.writeText(prompt3d);
     setCopied3dPrompt(true);
     setTimeout(() => setCopied3dPrompt(false), 2500);
@@ -485,14 +491,14 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const handleCopy1to1Prompt = () => {
     const positionDesc =
       titlePosition === 'bottom'
-        ? '画面底部留白处（沉底排版，严禁遮挡人物面部、眼睛或核心道具）'
+        ? '画面底部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）'
         : titlePosition === 'middle'
-        ? '画面正中视觉冲击留白处'
+        ? '画面居中空白处（避开人脸）'
         : titlePosition === 'upper_middle'
-        ? '画面中上留白处'
-        : '画面顶部正中央留白处（置顶排版，避免遮挡中下部人物动作）';
+        ? '画面中上空白处（避开人脸）'
+        : '画面顶部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）';
 
-    const prompt1to1 = `@豆包 请以我上传的这张视频原片自动截图为垫图底图（图生图）：必须严格 1:1 还原截图中人物的原始真实面孔、眼神微表情、五官骨相与服装细节（人物表情尽量都采用原始自动截图中的真实神态，严禁生成任何无关假人！），在保持 1:1 原片人物神态一致性的基础上，强化电影级光影对比与瞳孔高光，在${positionDesc}醒目大字印上“${currentShortTitle}”，生成 3:4 比例超清海报！`;
+    const prompt1to1 = `@豆包 请以我上传的这张视频原片自动截图为垫图底图（以图生图）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征与衣着细节；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情（严禁生成浮夸表情或假人脸！）；在${positionDesc}醒目大字印上封面标题“${currentShortTitle}”（标题不要去限制多少字，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），生成 3:4 比例超清真人写实电影质感海报！`;
     navigator.clipboard.writeText(prompt1to1);
     setCopied1to1Prompt(true);
     setTimeout(() => setCopied1to1Prompt(false), 2500);
@@ -625,8 +631,8 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                     </>
                   )}
                 </span>
-                <span className="font-mono text-xs">
-                  {currentShortTitle.length} / 8 字 (建议 4~8 汉字)
+                <span className="text-xs text-amber-300/90 font-medium">
+                  ✨ 标题不限字数（字号自适应）· 尽量排在空白处避让人脸
                 </span>
               </div>
 
@@ -635,8 +641,8 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                   <input
                     type="text"
                     value={currentShortTitle}
-                    onChange={(e) => setCurrentShortTitle(e.target.value.slice(0, 10))}
-                    placeholder="输入或选择 4-8 字短标题..."
+                    onChange={(e) => setCurrentShortTitle(e.target.value)}
+                    placeholder="输入封面标题（不限字数，字号自适应缩放，尽量写在空白处避开人脸）..."
                     className="w-full bg-slate-950/90 border-2 border-amber-500/60 focus:border-amber-400 text-amber-100 font-black text-xl sm:text-2xl px-3 py-2 rounded-xl focus:outline-none tracking-wider shadow-inner"
                   />
                   <Edit3 className="w-4 h-4 text-amber-400/60 absolute right-3 top-3.5 pointer-events-none" />
@@ -767,22 +773,17 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
             </div>
           </div>
 
-          {/* Red line check & Cover Workflow */}
+          {/* Mode Switcher: 视频实况写实 vs 3D卡通仿真人 */}
           <div className="mb-4 bg-slate-950/90 p-3 rounded-xl border border-slate-800">
-            <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-sky-400" />
-                审核红线与封面生成机制：
+                封面形式与安全降敏：
               </span>
-              {coverDesign.hasSensitiveContent ? (
-                <span className="text-[11px] text-rose-300 bg-rose-950/80 border border-rose-700 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                  <ShieldAlert className="w-3 h-3 text-rose-400" />
-                  触碰红线 · 启动3D图生图
-                </span>
-              ) : (
-                <span className="text-[11px] text-emerald-300 bg-emerald-950/80 border border-emerald-700 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                  <Check className="w-3 h-3 text-emerald-400" />
-                  不碰红线 · 原生截图打字直出
+              {coverDesign.hasSensitiveContent && (
+                <span className="text-[11px] text-rose-400 bg-rose-950/80 border border-rose-800 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3" />
+                  监测到敏感/剧烈内容，推荐3D卡通
                 </span>
               )}
             </div>
@@ -790,54 +791,32 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setArtMode('realistic')}
-                className={`flex flex-col items-start p-2.5 rounded-xl border text-xs transition-all ${
+                className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-bold transition-all ${
                   artMode === 'realistic'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200 ring-1 ring-emerald-500/50 shadow'
+                    ? 'border-amber-400 bg-amber-950/40 text-amber-200 shadow'
                     : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold mb-1">
-                  <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>不碰红线：截图直出+打字</span>
-                </div>
-                <span className="text-[10px] text-slate-400 text-left leading-tight">
-                  直接用原片自动截图打上大字短标题，无需重新生图，真实高效！
-                </span>
+                <Camera className="w-4 h-4 text-amber-400" />
+                <span>视频实况截取设计 (真实写实还原)</span>
               </button>
 
               <button
                 onClick={() => setArtMode('3d-cartoon')}
-                className={`flex flex-col items-start p-2.5 rounded-xl border text-xs transition-all ${
+                className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-bold transition-all ${
                   artMode === '3d-cartoon'
-                    ? 'border-rose-500 bg-rose-950/40 text-rose-200 ring-1 ring-rose-500/50 shadow'
+                    ? 'border-sky-400 bg-sky-950/40 text-sky-200 shadow'
                     : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold mb-1">
-                  <Smile className="w-3.5 h-3.5 text-rose-400" />
-                  <span>触碰红线：以图生图3D仿真人</span>
-                </div>
-                <span className="text-[10px] text-slate-400 text-left leading-tight">
-                  含打斗/流血/暴力等违禁画面时，用截图垫图转3D规避封禁！
-                </span>
+                <Smile className="w-4 h-4 text-sky-400" />
+                <span>3D卡通仿真人 (防暴力/防乱套)</span>
               </button>
             </div>
 
-            <div className={`mt-2.5 text-[11px] p-2.5 rounded-lg border leading-relaxed ${
-              artMode === 'realistic'
-                ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300'
-                : 'bg-rose-950/30 border-rose-800/40 text-rose-300'
-            }`}>
-              {artMode === 'realistic' ? (
-                <span>
-                  🟢 <strong>常规实况模式：</strong>当前视频未触碰审核红线。<strong>不需要重新AI生图</strong>，直接调用系统自动截取的原片高潮帧做底图，打上醒目中文短标题，点击上方“下载 3:4 高清封面”即可秒级直出！
-                </span>
-              ) : (
-                <span>
-                  🔴 <strong>敏感避险模式：</strong>视频触碰打斗/血腥/暴力等平台审核红线，若直接发实况截图必被平台限流封禁！系统自动启动<strong>【以图生图生成3D仿真人】</strong>，以截帧为底图转为 3D 动画质感，完美避开封禁！
-                </span>
-              )}
-            </div>
+            <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+              💡 规则提示：若视频含暴力冲突或杂乱画面，系统自动切换为<strong>【3D卡通仿真人】</strong>，保持原始真实神态的同时规避违规审查！
+            </p>
           </div>
 
           {/* Video Frames Selector: 截取最适爆款分镜并1:1还原人物 */}
@@ -958,18 +937,18 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
               <div className="flex items-center justify-between text-emerald-400 font-bold">
                 <span className="flex items-center gap-1.5">
                   <UserCheck className="w-4 h-4 text-emerald-400" />
-                  全自动流水线垫图 · 人物表情尽量采用原始自动截图
+                  自动截图垫图 · 真人写实风格
                 </span>
                 <span className="text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-600 font-mono">
-                  自动化垫图 · 原片真表情
+                  还原截图表情 · 标题空白处避脸
                 </span>
               </div>
               <p className="text-slate-300 text-[11px] leading-relaxed pt-0.5">
-                {coverDesign.characterTraits1to1 || '本身是全自动化流程，在抽取视频帧时系统已全自动完成高潮截图并垫入底图。封面人物的面部轮廓、眼神、微表情与体态姿势尽量且严格沿用原始自动截图中的真实神态，避免任何虚假捏造！'}
+                {coverDesign.characterTraits1to1 || '全自动视频截帧垫图流水线：真人写实风格，忠实还原截图本身的真实生活神态与微表情，绝不用刻意夸张；封面标题不设死板字数限制，字号自适应缩放，智能排布在画面空白处，绝不遮挡他的人脸！'}
               </p>
               <div className="pt-1 border-t border-emerald-800/40 flex items-center justify-between text-[10px] text-emerald-300/80">
-                <span>原片高潮截帧已自动作为画板底图</span>
-                <span>严禁生成无关假人假表情</span>
+                <span>真人写实垫图 · 还原原始微表情不用夸张</span>
+                <span>标题空白排布 · 严禁遮挡人脸</span>
               </div>
             </div>
 
@@ -993,68 +972,70 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: 区分触碰红线与未触碰红线 */}
+        {/* Action Buttons: 垫图真人写实风格重绘 / 豆包文生图 / 3D防违规备选 */}
         <div className="pt-2 space-y-2">
-          {artMode === 'realistic' ? (
-            <>
-              {/* 不触碰红线：无需重新生图，直接截图+打文字直出 */}
-              <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-200">
-                <div className="flex items-center gap-1.5 font-bold mb-1">
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  未触碰红线：原生截图打字直出（无需重新生图）
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  当前视频未检测到暴力打斗或违禁内容，无需跑 AI 生图！系统已直接用视频截图作为底图，并在适宜位置打上大字短标题，点击左侧<strong>【下载 3:4 高清封面】</strong>即可秒级出图。
-                </p>
-              </div>
+          {/* Priority 1: Live-Action Photorealistic Image-to-Image / Underlay Prompt */}
+          <button
+            onClick={handleCopy1to1Prompt}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98]"
+          >
+            {copied1to1Prompt ? (
+              <>
+                <Check className="w-4 h-4" />
+                已复制【豆包垫图真人写实生图指令】(还原截图表情 · 标题空白处避开人脸)
+              </>
+            ) : (
+              <>
+                <UserCheck className="w-4 h-4 text-emerald-200" />
+                一键复制【豆包垫图真人写实生图指令】(还原截图表情不用夸张 · 标题空白处避开人脸)
+              </>
+            )}
+          </button>
 
-              <button
-                onClick={handleCopy1to1Prompt}
-                className="w-full flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs py-2 px-4 rounded-xl transition-all"
-              >
-                {copied1to1Prompt ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    已复制豆包垫图1:1还原指令 (备用)
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="w-4 h-4 text-emerald-300" />
-                    复制备用【豆包垫图 1:1 还原指令】(通常无需生图，直接用截图直出)
-                  </>
-                )}
-              </button>
-            </>
-          ) : (
-            <>
-              {/* 触碰红线：以图生图生成 3D 仿真人规避违规审查 */}
-              <div className="bg-rose-950/50 border border-rose-500/50 rounded-xl p-3 text-xs text-rose-200">
-                <div className="flex items-center gap-1.5 font-bold mb-1 text-rose-300">
-                  <ShieldAlert className="w-4 h-4 text-rose-400" />
-                  触碰平台审核红线 · 必须以图生图生成 3D 仿真人规避违规
-                </div>
-                <p className="text-[11px] text-rose-200/90 leading-relaxed">
-                  原画面涉嫌打斗冲突/流血或危险动作，直接发实图会被平台限流或封禁！请点击下方按钮，复制专用的以图生图垫图指令至豆包，生成 3D 仿真人彻底规避真人审查。
-                </p>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              onClick={handleDownloadRawUnderlay}
+              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs py-2 px-3 rounded-xl transition-all"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-400" />
+              <span>下载本分镜原图 (去豆包垫图)</span>
+            </button>
 
-              <button
-                onClick={handleCopy3dPrompt}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 hover:from-sky-500 hover:to-purple-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98]"
-              >
-                {copied3dPrompt ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    已复制豆包以图生图3D仿真人指令 (用截图垫图转3D防封禁)
-                  </>
-                ) : (
-                  <>
-                    <Smile className="w-4 h-4 text-sky-200" />
-                    一键复制【豆包以图生图 3D 仿真人指令】(用截图垫图转3D防封禁)
-                  </>
-                )}
-              </button>
-            </>
+            <button
+              onClick={handleCopyDoubaoDraw}
+              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs py-2 px-3 rounded-xl transition-all"
+            >
+              {copiedDoubaoDraw ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>已复制文生图指令</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>复制豆包文生图指令</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {artMode === '3d-cartoon' && (
+            <button
+              onClick={handleCopy3dPrompt}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-sky-700 via-indigo-700 to-purple-700 hover:from-sky-600 hover:to-purple-600 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow transition-all active:scale-[0.98]"
+            >
+              {copied3dPrompt ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  已复制 3D 仿真人专属指令 (防暴力防违规)
+                </>
+              ) : (
+                <>
+                  <Smile className="w-4 h-4 text-sky-200" />
+                  复制【3D仿真人专属指令】(打斗/敏感画面降敏防封)
+                </>
+              )}
+            </button>
           )}
 
           <button
