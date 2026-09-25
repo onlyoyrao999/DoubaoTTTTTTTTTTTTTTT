@@ -127,6 +127,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const [copiedDoubaoDraw, setCopiedDoubaoDraw] = useState(false);
   const [copied3dPrompt, setCopied3dPrompt] = useState(false);
   const [copied1to1Prompt, setCopied1to1Prompt] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
 
   // Sync art mode & title if coverDesign changes
@@ -498,7 +499,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ? '画面中上空白处（避开人脸）'
         : '画面顶部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）';
 
-    const prompt1to1 = `@豆包 请以我上传的这张视频原片自动截图为垫图底图（以图生图）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征与衣着细节；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情（严禁生成浮夸表情或假人脸！）；在${positionDesc}醒目大字印上封面标题“${currentShortTitle}”（标题不要去限制多少字，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），生成 3:4 比例超清真人写实电影质感海报！`;
+    const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！】请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；在${positionDesc}醒目大字印上封面标题“${currentShortTitle}”（标题不要去限制多少字，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
     navigator.clipboard.writeText(prompt1to1);
     setCopied1to1Prompt(true);
     setTimeout(() => setCopied1to1Prompt(false), 2500);
@@ -510,6 +511,38 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
     link.download = `原片自动截帧垫图_${coverDesign.recommendedFrameTimestamp || '高潮分镜'}.jpg`;
     link.href = frameImage;
     link.click();
+  };
+
+  const handleCopyRawUnderlayToClipboard = async () => {
+    if (!frameImage) return;
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = frameImage;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = img.naturalWidth || img.width;
+      tempCanvas.height = img.naturalHeight || img.height;
+      const ctx = tempCanvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        tempCanvas.toBlob(async (blob) => {
+          if (blob && navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            setCopiedImage(true);
+            setTimeout(() => setCopiedImage(false), 2500);
+          } else {
+            handleDownloadRawUnderlay();
+          }
+        }, 'image/png');
+      }
+    } catch {
+      handleDownloadRawUnderlay();
+    }
   };
 
   return (
@@ -933,22 +966,23 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
           {/* 1:1 Character Fidelity Lock & Visual Specification */}
           <div className="space-y-2.5 mb-4">
             {/* 1:1 Character Fidelity Card & Automated Underlay */}
-            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs space-y-1.5">
-              <div className="flex items-center justify-between text-emerald-400 font-bold">
-                <span className="flex items-center gap-1.5">
+            <div className="bg-emerald-950/50 border-2 border-emerald-500/60 rounded-xl p-3.5 text-xs space-y-2 shadow-lg">
+              <div className="flex items-center justify-between text-emerald-300 font-bold">
+                <span className="flex items-center gap-1.5 text-sm">
                   <UserCheck className="w-4 h-4 text-emerald-400" />
-                  自动截图垫图 · 真人写实风格
+                  🔥 核心铁律：自动截取的图必须用于垫图重新生成！
                 </span>
-                <span className="text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-600 font-mono">
-                  还原截图表情 · 标题空白处避脸
+                <span className="text-[10px] bg-emerald-900/90 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500 font-mono font-bold">
+                  以图生图 · 强制垫图
                 </span>
               </div>
-              <p className="text-slate-300 text-[11px] leading-relaxed pt-0.5">
-                {coverDesign.characterTraits1to1 || '全自动视频截帧垫图流水线：真人写实风格，忠实还原截图本身的真实生活神态与微表情，绝不用刻意夸张；封面标题不设死板字数限制，字号自适应缩放，智能排布在画面空白处，绝不遮挡他的人脸！'}
+              <p className="text-slate-200 text-xs leading-relaxed">
+                {coverDesign.characterTraits1to1 || '严禁脱离截图直接生图！系统已全自动截取视频高潮分镜，该图必须作为垫图底图（以图生图）重新生成 3:4 封面海报；必须忠实还原原片截图中人物微表情与生活真实神态（不用刻意夸张）；封面标题不限字数，字号自适应缩放，智能排布在画面空白处，绝不遮挡他的人脸！'}
               </p>
-              <div className="pt-1 border-t border-emerald-800/40 flex items-center justify-between text-[10px] text-emerald-300/80">
-                <span>真人写实垫图 · 还原原始微表情不用夸张</span>
-                <span>标题空白排布 · 严禁遮挡人脸</span>
+              <div className="pt-1.5 border-t border-emerald-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-300 font-medium">
+                <span>✅ 必须以此自动截图为垫图底图重新生成</span>
+                <span>✅ 还原截图表情不用夸张</span>
+                <span>✅ 标题写在空白处避让人脸</span>
               </div>
             </div>
 
@@ -973,47 +1007,84 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         </div>
 
         {/* Action Buttons: 垫图真人写实风格重绘 / 豆包文生图 / 3D防违规备选 */}
-        <div className="pt-2 space-y-2">
-          {/* Priority 1: Live-Action Photorealistic Image-to-Image / Underlay Prompt */}
+        <div className="pt-2 space-y-2.5">
+          {/* Priority 1: Mandatory Image-to-Image with Auto-captured Underlay */}
           <button
             onClick={handleCopy1to1Prompt}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white font-bold text-xs sm:text-sm py-3 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98] ring-2 ring-emerald-400/40"
           >
             {copied1to1Prompt ? (
               <>
-                <Check className="w-4 h-4" />
-                已复制【豆包垫图真人写实生图指令】(还原截图表情 · 标题空白处避开人脸)
+                <Check className="w-5 h-5 text-white" />
+                已复制【自动截图垫图 1:1 重新生成指令】(自动截取的图必须用于垫图重新生成)
               </>
             ) : (
               <>
-                <UserCheck className="w-4 h-4 text-emerald-200" />
-                一键复制【豆包垫图真人写实生图指令】(还原截图表情不用夸张 · 标题空白处避开人脸)
+                <UserCheck className="w-5 h-5 text-emerald-200" />
+                一键复制【自动截图垫图 1:1 重新生成指令】(自动截取的图必须用于垫图重新生成)
               </>
             )}
           </button>
 
+          {/* Underlay Image Delivery: Copy to Clipboard (Ctrl+V) & Direct Download */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
-              onClick={handleDownloadRawUnderlay}
-              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs py-2 px-3 rounded-xl transition-all"
+              onClick={handleCopyRawUnderlayToClipboard}
+              className="flex items-center justify-center gap-2 bg-indigo-950/80 hover:bg-indigo-900/90 text-indigo-200 border border-indigo-700/80 font-semibold text-xs py-2.5 px-3 rounded-xl transition-all shadow active:scale-[0.98]"
             >
-              <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span>下载本分镜原图 (去豆包垫图)</span>
+              {copiedImage ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="text-emerald-300 font-bold">已复制截图！去豆包直接 Ctrl+V 粘贴垫图</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-indigo-300" />
+                  <span>复制截图到剪贴板 (直接 Ctrl+V 粘贴垫图)</span>
+                </>
+              )}
             </button>
 
             <button
+              onClick={handleDownloadRawUnderlay}
+              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs py-2.5 px-3 rounded-xl transition-all"
+            >
+              <Download className="w-4 h-4 text-amber-400" />
+              <span>下载截图原图 (本地垫图文件上传)</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button
               onClick={handleCopyDoubaoDraw}
-              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs py-2 px-3 rounded-xl transition-all"
+              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium text-xs py-2 px-3 rounded-xl transition-all"
             >
               {copiedDoubaoDraw ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>已复制文生图指令</span>
+                  <span>已复制文生图备用指令</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>复制豆包文生图指令</span>
+                  <span>复制文生图指令 (备用)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleCopyPrompt}
+              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-300 border border-slate-800 text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+            >
+              {copiedPrompt ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>已复制中英通用 Prompt</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                  <span>复制通用 Prompt (中/英文)</span>
                 </>
               )}
             </button>
