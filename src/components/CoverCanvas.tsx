@@ -439,7 +439,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   };
 
   const handleCopyPrompt = () => {
-    const promptText = `【3:4写实夸张封面 Prompt】\n中文提示词：\n${coverDesign.promptChinese || coverDesign.visualDescription}\n\n英文生成提示词（可用于 Midjourney / 豆包文生图 / SD）：\n${coverDesign.promptEnglish}`;
+    const promptText = `【3:4真实写实封面 Prompt】\n中文提示词：\n${coverDesign.promptChinese || coverDesign.visualDescription}\n\n英文生成提示词（可用于 Midjourney / 豆包文生图 / SD）：\n${coverDesign.promptEnglish}`;
     navigator.clipboard.writeText(promptText);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2500);
@@ -449,7 +449,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
     const is3D = artMode === '3d-cartoon';
     const stylePrefix = is3D
       ? '3D Pixar风格的仿真人高品质CG动画封面海报（规避暴力杂乱真实违规）'
-      : '电影级写实夸张人物封面海报';
+      : '电影级真实写实人物封面海报';
 
     const positionDesc =
       titlePosition === 'bottom'
@@ -460,7 +460,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ? '画面中上留白处'
         : '画面顶部留白处（置顶排版，避免遮挡中下方人物动作）';
 
-    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：在${positionDesc}用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，神态极其戏剧化夸张震撼：${coverDesign.characterExpression}；强对比度高动态光影，极具视觉冲击力！`;
+    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：在${positionDesc}用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，面部表情不用刻意夸张，注重还原原片很原始的真实神情：${coverDesign.characterExpression}；强对比度高动态光影，极具视觉冲击力！`;
     navigator.clipboard.writeText(doubaoDrawPrompt);
     setCopiedDoubaoDraw(true);
     setTimeout(() => setCopiedDoubaoDraw(false), 2500);
@@ -469,7 +469,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const handleCopy3dPrompt = () => {
     const positionDesc =
       titlePosition === 'bottom' ? '画面底部留白处' : '画面顶部正中央';
-    const prompt3d = `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，在${positionDesc}印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
+    const prompt3d = `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在${positionDesc}印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
     navigator.clipboard.writeText(prompt3d);
     setCopied3dPrompt(true);
     setTimeout(() => setCopied3dPrompt(false), 2500);
@@ -509,7 +509,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
               3:4
             </span>
             <span className="font-semibold text-white text-sm">
-              {artMode === '3d-cartoon' ? '3D仿真人竖版封面' : '写实夸张竖版封面'}
+              {artMode === '3d-cartoon' ? '3D仿真人竖版封面' : '真实写实竖版封面'}
             </span>
           </div>
           <span className="text-xs text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -785,7 +785,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                 }`}
               >
                 <Camera className="w-4 h-4 text-amber-400" />
-                <span>视频实况截取设计 (写实夸张)</span>
+                <span>视频实况截取设计 (真实写实还原)</span>
               </button>
 
               <button
@@ -802,7 +802,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-              💡 规则提示：若视频含暴力冲突或杂乱画面，系统自动切换为<strong>【3D卡通仿真人】</strong>，保持夸张神态的同时规避违规审查！
+              💡 规则提示：若视频含暴力冲突或杂乱画面，系统自动切换为<strong>【3D卡通仿真人】</strong>，保持原始真实神态的同时规避违规审查！
             </p>
           </div>
 

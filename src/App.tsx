@@ -209,7 +209,7 @@ export default function App() {
       timeline: sample.mockTimeline,
       coverDesign: {
         shortTitle: sample.mockShortTitle,
-        characterExpression: '极度写实且夸张的人物神态，面部特写张力十足，瞳孔地震，真实震撼',
+        characterExpression: '真实还原原片原始表情与神态：眼神专注凝滞，动作自然朴实，没有刻意夸张，完全忠实呈现生活实况质感',
         visualDescription: '3:4竖版构图，强烈光影与色彩对比，高动态戏剧性瞬间抓拍',
         promptChinese: '3:4写实纪实海报，人物神态极具情绪张力，电影级景深与质感',
         promptEnglish: sample.mockCoverPrompt,
@@ -217,7 +217,7 @@ export default function App() {
         styleMode: 'realistic',
         hasSensitiveContent: false,
         sensitiveReason: '常规实况记录，未检测到暴力违规画面',
-        cartoon3dPrompt: `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，画面顶部正中央印上全中文短标题“${sample.mockShortTitle}”。`,
+        cartoon3dPrompt: `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在画面适宜留白处印上全中文短标题“${sample.mockShortTitle}”。`,
         characterFidelityMode: '1to1_faithful',
         characterTraits1to1: '1:1 提取并还原视频真实人物长相、发型发色与衣着质感，防假人脸崩',
         recommendedFrameTimestamp: bestFrame.formattedTime,

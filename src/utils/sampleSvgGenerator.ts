@@ -114,7 +114,7 @@ export function generateSampleFrameSvg(
         
         <rect x="40" y="1120" width="820" height="60" rx="12" fill="#000000" opacity="0.6"/>
         <text x="450" y="1160" font-family="sans-serif" font-size="28" font-weight="bold" fill="#38bdf8" text-anchor="middle">
-          ⚡ 3D仿真雨夜救援 · 夸张张力渲染
+          ⚡ 3D仿真雨夜救援 · 真实质感渲染
         </text>
       </svg>`;
     } else {
@@ -147,7 +147,7 @@ export function generateSampleFrameSvg(
         
         <rect x="40" y="1120" width="820" height="60" rx="12" fill="#000000" opacity="0.6"/>
         <text x="450" y="1160" font-family="sans-serif" font-size="28" font-weight="bold" fill="#f59e0b" text-anchor="middle">
-          ⚡ 3D仿真烟火纪实 · 夸张市井角色
+          ⚡ 3D仿真烟火纪实 · 真实市井角色
         </text>
       </svg>`;
     }

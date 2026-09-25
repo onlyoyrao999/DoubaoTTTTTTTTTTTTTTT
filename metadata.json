@@ -1,6 +1,6 @@
 {
   "name": "豆包视频智能分析与爆款创作Skill",
-  "description": "专为豆包打造的视频深度分析Skill工作台：一键视频剧情拆解、事件时间轴、3:4高冲击写实夸张封面（强制中文短标题）、4条爆款长标题、以及地道四川短句反问评论与25字内评论标题生成器。",
+  "description": "专为豆包打造的视频深度分析Skill工作台：一键视频剧情拆解、事件时间轴、3:4真实写实封面（强制中文短标题）、4条爆款长标题、以及地道四川短句反问评论与25字内评论标题生成器。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
