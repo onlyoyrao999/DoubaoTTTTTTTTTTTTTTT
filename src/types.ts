@@ -24,6 +24,10 @@ export interface CoverDesign {
   promptEnglish: string;
   badgeText?: string;
   colorTheme?: string;
+  styleMode?: 'realistic' | '3d-cartoon';
+  hasSensitiveContent?: boolean;
+  sensitiveReason?: string;
+  cartoon3dPrompt?: string;
 }
 
 export interface ViralTitle {

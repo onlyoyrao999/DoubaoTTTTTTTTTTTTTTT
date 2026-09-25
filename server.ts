@@ -139,11 +139,15 @@ function generateNativeDoubaoResult(
     coverDesign: {
       shortTitle,
       characterExpression: characterExp,
-      visualDescription: '3:4 竖版画面黄金分割位强制印上大字中文短标题，高对比度警示配色，背景为写实电影光影',
+      visualDescription: '3:4 竖版画面黄金分割位强制印上大字中文短标题，高对比度警示配色，背景为写实电影光影或3D仿真人CG质感',
       promptChinese: `3:4 比例超写实电影海报，画面顶部居中醒目大字印上“${shortTitle}”，高对比度真实人物特写，戏剧张力拉满，纪实胶片质感。`,
       promptEnglish: promptEn,
       badgeText: badge,
       colorTheme: '警示亮黄',
+      styleMode: 'realistic',
+      hasSensitiveContent: false,
+      sensitiveReason: '常规生活实况记录，未检测到血腥暴力内容，默认使用写实纪实抓拍画风',
+      cartoon3dPrompt: `3D Pixar style cinematic 3:4 animated poster, high detailed 3D stylized human character, dramatic facial expression, hyper-detailed rendering, glowing lighting, text banner saying "${shortTitle}" at top.`,
     },
     viralTitles: [
       {
@@ -209,10 +213,12 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
    - 提取 4~7 个关键节点，标注格式 mm:ss（如 00:04, 00:18, 00:45）。
    - 包含动作细节（actionDetail）与紧张/情绪指数（tension: 1-100）。
 3. 3:4 冲击力《写实夸张封面》方案（Cover）：
-   - 必须设计一个 4~8 字的全中文短标题（shortTitle），字字千钧、冲击力爆棚（例如：“当场破防！”“直接撕破脸！”“他真下死手！”）。
-   - 封面人物形象设定：写实画风（Photorealistic Cinematic）、人物神情极其夸张（瞳孔地震、青筋暴起、惊愕至极、狂喜抓狂等真实面部张力）、高动态范围光影、戏剧化特写。
-   - 封面强制设计：明确短标题在 3:4 竖版画面中的排版位置（顶部居中超大粗黑体配描边与警示底衬，极其吸睛）。
-   - 提供给绘画模型的高精度中文与英文 Prompt，用于生成 3:4 写实夸张封面。
+   - 核心原则：主要以读取视频内容，截取一张最适合做封面的高潮分镜图片进行文字封面设计加工。
+   - 必须设计一个 4~8 字的全中文短标题（shortTitle），字字千钧、冲击力爆棚（例如：“当场破防！”“直接撕破脸！”“他真下死手！”），强制排在 3:4 画面顶部居中黄金位置。
+   - 【极端重要：敏感/暴力/杂乱内容自动转 3D 仿真人卡通模式】：
+     若视频内容含有什么暴力、冲突拉扯、激烈打架、或血腥/杂乱等不适合真人写实的画面，封面形象必须自动降级/升级为【3D 卡通形式（仿真人 Pixar/CGI 风格，具有真实人类五官骨骼比例与逼真材质，但通过 3D 艺术化处理规避真实暴力审查）】！
+     若内容日常无违规，则默认使用《写实夸张的人物形象》（Photorealistic Dramatic Cinematic）。
+   - 提供给豆包免费生图模型的高精度中英文生图 Prompt（包含 3D 仿真人与写实两种风格引导）。
 4. 4条热门爆款长标题（Viral Long Titles）：
    - 必须生成 4 条极具传播力、点击率极高的长标题（吸引眼球、信息差、情绪共鸣、悬念感）。
 5. 第三人称观众深度共鸣反思评论（Viewer Comment）——【最高优先级严格红线】：
@@ -291,7 +297,7 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
                 },
                 characterExpression: {
                   type: Type.STRING,
-                  description: '写实夸张的人物神态特征（如瞳孔瞪大、眉毛倒竖、嘴角冷笑等）',
+                  description: '写实夸张或3D仿真人夸张的人物神态特征（如瞳孔瞪大、眉毛倒竖、嘴角抽搐等）',
                 },
                 visualDescription: {
                   type: Type.STRING,
@@ -303,7 +309,7 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
                 },
                 promptEnglish: {
                   type: Type.STRING,
-                  description: '用于生图的英文 Prompt (Photorealistic dramatic 3:4 poster...)',
+                  description: '用于生图的英文 Prompt',
                 },
                 badgeText: {
                   type: Type.STRING,
@@ -312,6 +318,22 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
                 colorTheme: {
                   type: Type.STRING,
                   description: '主色调建议，如 赤红警戒/暗夜破晓/黑金纪实',
+                },
+                hasSensitiveContent: {
+                  type: Type.BOOLEAN,
+                  description: '视频画面是否含暴力冲突、剧烈打斗或不适合真人写实的敏感杂乱内容',
+                },
+                styleMode: {
+                  type: Type.STRING,
+                  description: '封面风格: realistic (写实纪实) 或 3d-cartoon (3D卡通仿真人)',
+                },
+                sensitiveReason: {
+                  type: Type.STRING,
+                  description: '若判定为敏感或启用3D卡通的原因说明',
+                },
+                cartoon3dPrompt: {
+                  type: Type.STRING,
+                  description: '3D仿真人高质感卡通CG海报专属Prompt',
                 },
               },
               required: ['shortTitle', 'characterExpression', 'visualDescription', 'promptEnglish'],

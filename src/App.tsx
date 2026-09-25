@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   Video,
@@ -15,9 +15,12 @@ import {
   Flame,
   LayoutTemplate,
   Layers,
+  Camera,
+  Smile,
 } from 'lucide-react';
 import { SAMPLE_VIDEOS, SampleVideoOption } from './data/sampleVideos';
-import { extractVideoFrames, formatTime } from './utils/videoExtractor';
+import { extractVideoFrames, captureCurrentVideoFrame } from './utils/videoExtractor';
+import { generateSampleFrameSvg } from './utils/sampleSvgGenerator';
 import { CoverCanvas } from './components/CoverCanvas';
 import { TimelineView } from './components/TimelineView';
 import { TitlesAndComments } from './components/TitlesAndComments';
@@ -35,21 +38,64 @@ export default function App() {
     description: SAMPLE_VIDEOS[0].description,
   });
 
-  const [extractedFrames, setExtractedFrames] = useState<ExtractedFrame[]>([]);
+  // Extracted Frames from uploaded video or preset scenario
+  const [extractedFrames, setExtractedFrames] = useState<ExtractedFrame[]>([
+    {
+      timestamp: 8,
+      formattedTime: '00:08',
+      dataUrl: generateSampleFrameSvg('factory-patrol', '00:08', 'realistic'),
+    },
+    {
+      timestamp: 24,
+      formattedTime: '00:24',
+      dataUrl: generateSampleFrameSvg('factory-patrol', '00:24', 'realistic'),
+    },
+    {
+      timestamp: 46,
+      formattedTime: '00:46',
+      dataUrl: generateSampleFrameSvg('factory-patrol', '00:46', 'realistic'),
+    },
+    {
+      timestamp: 75,
+      formattedTime: '01:15',
+      dataUrl: generateSampleFrameSvg('factory-patrol', '01:15', 'realistic'),
+    },
+  ]);
+
+  // Selected Cover Image DataUrl
+  const [selectedCoverImage, setSelectedCoverImage] = useState<string>(
+    generateSampleFrameSvg('factory-patrol', '00:46', 'realistic')
+  );
+
+  // 3D Cartoon Stylized Avatar Image
+  const [cartoon3dImage, setCartoon3dImage] = useState<string>(
+    generateSampleFrameSvg('factory-patrol', '00:46', '3d-cartoon')
+  );
+
   const [manualNote, setManualNote] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisProgress, setAnalysisProgress] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>({
-    summary: SAMPLE_VIDEOS[0].description + '\n\n【深层剖析】：老周与巡检机器人的较劲，表面上是一把卡尺的精度之争，实则是传统蓝领工人面对自动化技术席卷而来的尊严护卫战。机器人的精准复测与老周的凝滞，构成了戏剧性最强烈的反差。',
+    summary:
+      SAMPLE_VIDEOS[0].description +
+      '\n\n【深层剖析】：老周与巡检机器人的较劲，表面上是一把卡尺的精度之争，实则是传统蓝领工人面对自动化技术席卷而来的尊严护卫战。机器人的精准复测与老周的凝滞，构成了戏剧性最强烈的反差。',
     timeline: SAMPLE_VIDEOS[0].mockTimeline,
     coverDesign: {
       shortTitle: SAMPLE_VIDEOS[0].mockShortTitle,
-      characterExpression: '老钳工眉头紧锁，眼神震颤，满是油污的手指紧握扳手，震惊与不甘写满整张写实面孔',
-      visualDescription: '工业车间重度景深、高动态冷蓝工业激光与昏黄暖光对撞、粗粝纪实胶片质感',
-      promptChinese: '3:4 比例超写实电影海报，一位满脸汗水与机油的老钳工眼球震颤，极度震惊地看着前方，背景有工业巡检机械发出的高光激光，强对比光影，戏剧张力。',
+      characterExpression:
+        '老钳工眉头紧锁，眼神震颤，满是油污的手指紧握扳手，震惊与不甘写满整张写实面孔',
+      visualDescription:
+        '工业车间重度景深、高动态冷蓝工业激光与昏黄暖光对撞、粗粝纪实胶片质感',
+      promptChinese:
+        '3:4 比例超写实电影海报，一位满脸汗水与机油的老钳工眼球震颤，极度震惊地看着前方，背景有工业巡检机械发出的高光激光，强对比光影，戏剧张力。',
       promptEnglish: SAMPLE_VIDEOS[0].mockCoverPrompt,
       badgeText: '实录爆点 · 现场破防',
       colorTheme: '警示亮黄',
+      styleMode: 'realistic',
+      hasSensitiveContent: false,
+      sensitiveReason: '常规生产车间测试，无暴力血腥内容，默认使用视频分镜实况写实截帧',
+      cartoon3dPrompt:
+        '@豆包 生成一张3:4比例的3D Pixar卡通风格老钳工海报，逼真3D动画角色特写，瞪大眼睛震惊神情，顶部大字印上“当场破防！”',
     },
     viralTitles: SAMPLE_VIDEOS[0].mockViralTitles,
     viewerComment: SAMPLE_VIDEOS[0].mockViewerComment,
@@ -74,9 +120,14 @@ export default function App() {
     setVideoUrl(url);
 
     try {
-      setAnalysisProgress('正在提取视频关键帧与元数据...');
-      const { duration, durationFormatted, frames } = await extractVideoFrames(file, 4);
+      setAnalysisProgress('正在读取视频并截取多处高潮分镜关键帧...');
+      const { duration, durationFormatted, frames } = await extractVideoFrames(file, 6);
       setExtractedFrames(frames);
+      if (frames.length > 0) {
+        // Choose middle/high tension frame (around 60% mark) as default cover frame
+        const bestIndex = Math.min(2, frames.length - 1);
+        setSelectedCoverImage(frames[bestIndex].dataUrl);
+      }
       setVideoMetadata({
         name: file.name,
         size: file.size,
@@ -104,14 +155,29 @@ export default function App() {
     setSelectedSample(sample);
     setCustomVideoFile(null);
     setVideoUrl(null);
-    setExtractedFrames([]);
+
+    // Build preset frames
+    const mockFrames: ExtractedFrame[] = sample.mockTimeline.map((item) => ({
+      timestamp: item.timeSec,
+      formattedTime: item.timestamp,
+      dataUrl: generateSampleFrameSvg(sample.id, item.timestamp, 'realistic'),
+    }));
+    setExtractedFrames(mockFrames);
+
+    // Pick tension climax frame
+    const bestFrame = mockFrames[2] || mockFrames[0];
+    setSelectedCoverImage(bestFrame.dataUrl);
+    setCartoon3dImage(generateSampleFrameSvg(sample.id, bestFrame.formattedTime, '3d-cartoon'));
+
     setVideoMetadata({
       name: sample.title,
       durationFormatted: sample.durationFormatted,
       description: sample.description,
     });
     setAnalysisResult({
-      summary: sample.description + '\n\n【核心看点】：现实生活烟火气与智能科技浪潮的剧烈摩擦，瞬间引爆全网讨论与共情。',
+      summary:
+        sample.description +
+        '\n\n【核心看点】：现实生活烟火气与智能科技浪潮的剧烈摩擦，瞬间引爆全网讨论与共情。',
       timeline: sample.mockTimeline,
       coverDesign: {
         shortTitle: sample.mockShortTitle,
@@ -120,6 +186,10 @@ export default function App() {
         promptChinese: '3:4写实纪实海报，人物神态极具情绪张力，电影级景深与质感',
         promptEnglish: sample.mockCoverPrompt,
         badgeText: '实录爆点 · 全网热议',
+        styleMode: 'realistic',
+        hasSensitiveContent: false,
+        sensitiveReason: '常规实况记录，未检测到暴力违规画面',
+        cartoon3dPrompt: `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，画面顶部正中央印上全中文短标题“${sample.mockShortTitle}”。`,
       },
       viralTitles: sample.mockViralTitles,
       viewerComment: sample.mockViewerComment,
@@ -128,11 +198,29 @@ export default function App() {
     });
   };
 
+  // Snapshot from video player directly
+  const handleSnapshotVideo = () => {
+    if (videoRef.current) {
+      const snap = captureCurrentVideoFrame(videoRef.current);
+      if (snap) {
+        setSelectedCoverImage(snap);
+        const curTime = Math.floor(videoRef.current.currentTime);
+        const m = Math.floor(curTime / 60);
+        const s = curTime % 60;
+        const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        setExtractedFrames((prev) => [
+          { timestamp: curTime, formattedTime: timeStr, dataUrl: snap },
+          ...prev.slice(0, 7),
+        ]);
+      }
+    }
+  };
+
   // Run AI Video Analysis
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
     setErrorMsg(null);
-    setAnalysisProgress('豆包视频 Skill 正在进行分镜解析...');
+    setAnalysisProgress('豆包视频 Skill 正在分析视频内容并提取最佳分镜...');
 
     try {
       const payload = {
@@ -144,7 +232,7 @@ export default function App() {
         manualContext: manualNote || videoMetadata.description,
       };
 
-      setAnalysisProgress('正在提取关键事件时间轴与冲突核心...');
+      setAnalysisProgress('正在提取关键事件时间轴与冲突核心，评估内容安全性...');
 
       const res = await fetch('/api/analyze-video', {
         method: 'POST',
@@ -162,10 +250,38 @@ export default function App() {
         throw new Error(resData.error || '分析失败');
       }
 
-      setAnalysisResult(resData.data);
+      const result = resData.data;
+
+      // Check if violent or sensitive content detected -> trigger 3D cartoon mode
+      const isSensitive =
+        result.coverDesign?.hasSensitiveContent ||
+        manualNote.includes('打架') ||
+        manualNote.includes('打斗') ||
+        manualNote.includes('暴力') ||
+        videoMetadata.name.includes('打架') ||
+        videoMetadata.name.includes('冲突');
+
+      if (isSensitive) {
+        result.coverDesign.styleMode = '3d-cartoon';
+        result.coverDesign.hasSensitiveContent = true;
+        result.coverDesign.sensitiveReason = '检测到可能含有打斗/冲突画面，系统已自动升级为【3D仿真人卡通模式】以避险防封';
+      }
+
+      setAnalysisResult(result);
+
+      // If sample scenario, sync 3D cartoon SVG if needed
+      if (selectedSample) {
+        setCartoon3dImage(
+          generateSampleFrameSvg(
+            selectedSample.id,
+            extractedFrames[0]?.formattedTime || '00:30',
+            '3d-cartoon'
+          )
+        );
+      }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || '分析过程中发生异常，请检查网络或配置');
+      setErrorMsg(err.message || '分析过程中发生异常，请重试');
     } finally {
       setIsAnalyzing(false);
       setAnalysisProgress('');
@@ -194,11 +310,11 @@ export default function App() {
                   豆包 AI 视频智能分析与爆款生产 Skill
                 </h1>
                 <span className="hidden sm:inline-block text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  零Key · 豆包自带免费生图
+                  视频截帧设计 · 暴力转3D仿真人
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                纯指令驱动 · 全自动分镜摘要 · 3:4写实夸张封面（强制中文短标题） · 4条爆款长标题 · 川味大白话反思评论
+                截取最适视频帧做封面 · 暴力冲突转3D仿真人避险 · 强制中文短标题 · 4爆款长标题 · 四川短句反思评论
               </p>
             </div>
           </div>
@@ -237,12 +353,12 @@ export default function App() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-semibold text-white">豆包原生全自主执行：</span>
-            <span>完全基于指令自主驱动，利用豆包自身多模态视觉与免费生图额度闭环完成</span>
+            <span className="font-semibold text-white">视频分镜截取与安全机制：</span>
+            <span>以截取真实视频画面做封面，遇暴力/敏感画面自动转为3D卡通仿真人降敏避险</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400">
             <span className="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
-              无需任何外部Key
+              3D仿真人降敏
             </span>
             <span className="text-amber-400/90 font-medium">严禁词: 铁蛋 / 视频中 / 看完视频</span>
             <span className="text-indigo-400/90 font-medium">语言调性: 四川方言短句</span>
@@ -264,8 +380,8 @@ export default function App() {
                       <Video className="w-4 h-4" />
                     </div>
                     <div>
-                      <h2 className="text-white font-bold text-sm sm:text-base">视频源载入与多模态采样</h2>
-                      <p className="text-xs text-slate-400">支持直接上传用户视频或选择代表性实况范例</p>
+                      <h2 className="text-white font-bold text-sm sm:text-base">视频读取与封面选帧</h2>
+                      <p className="text-xs text-slate-400">读取视频内容，截取最适合做封面的高潮图片</p>
                     </div>
                   </div>
                   <button
@@ -332,13 +448,21 @@ export default function App() {
                   </div>
 
                   {videoUrl ? (
-                    <div className="aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 relative">
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 relative group">
                       <video
                         ref={videoRef}
                         src={videoUrl}
                         controls
                         className="w-full h-full object-contain"
                       />
+                      <button
+                        onClick={handleSnapshotVideo}
+                        className="absolute top-2 right-2 bg-black/80 hover:bg-sky-600 text-white text-xs px-2.5 py-1 rounded-md border border-slate-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shadow"
+                        title="截取当前播放帧"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        截取当前瞬时
+                      </button>
                     </div>
                   ) : (
                     <div className="p-4 bg-slate-900/80 rounded-lg border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
@@ -350,26 +474,45 @@ export default function App() {
                   {/* Extracted Key Frames Strip */}
                   {extractedFrames.length > 0 && (
                     <div className="mt-3">
-                      <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
-                        多模态关键帧抽样 ({extractedFrames.length} 帧)：
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1">
+                          <Camera className="w-3.5 h-3.5 text-amber-400" />
+                          已自动读取并截取的分镜图片（点击选择作为封面底图）：
+                        </span>
+                        <span className="text-[10px] text-slate-400">共 {extractedFrames.length} 帧</span>
                       </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {extractedFrames.map((frame, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => handleSeekVideo(frame.timestamp)}
-                            className="group relative aspect-video bg-black rounded-md overflow-hidden border border-slate-700 cursor-pointer"
-                          >
-                            <img
-                              src={frame.dataUrl}
-                              alt="frame"
-                              className="w-full h-full object-cover group-hover:scale-105 transition"
-                            />
-                            <span className="absolute bottom-1 right-1 bg-black/80 font-mono text-[9px] text-white px-1 rounded">
-                              {frame.formattedTime}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                        {extractedFrames.map((frame, idx) => {
+                          const isPicked = selectedCoverImage === frame.dataUrl;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setSelectedCoverImage(frame.dataUrl);
+                                handleSeekVideo(frame.timestamp);
+                              }}
+                              className={`group relative aspect-video bg-black rounded-md overflow-hidden border-2 cursor-pointer transition ${
+                                isPicked
+                                  ? 'border-amber-400 ring-2 ring-amber-500/50 scale-105'
+                                  : 'border-slate-700 hover:border-slate-500 opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <img
+                                src={frame.dataUrl}
+                                alt="frame"
+                                className="w-full h-full object-cover group-hover:scale-105 transition"
+                              />
+                              <span className="absolute bottom-1 right-1 bg-black/80 font-mono text-[9px] text-white px-1 rounded">
+                                {frame.formattedTime}
+                              </span>
+                              {isPicked && (
+                                <span className="absolute top-1 left-1 bg-amber-500 text-black font-black text-[9px] px-1 rounded">
+                                  封面图
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -404,7 +547,13 @@ export default function App() {
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                         <span className="text-amber-300 font-medium">
-                          强制嵌入中文短标题的 3:4 写实夸张封面
+                          读取视频截取最佳分镜 + 强制嵌入中文短标题
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                        <span className="text-sky-300 font-medium">
+                          敏感/暴力杂乱画面自动转3D仿真人卡通避险
                         </span>
                       </li>
                       <li className="flex items-center gap-1.5">
@@ -412,10 +561,8 @@ export default function App() {
                         <span>4条高点击率爆款长标题</span>
                       </li>
                       <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
-                        <span className="text-sky-300 font-medium">
-                          第三人称川味大白话反思评论（含≤25字标题）
-                        </span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span>第三人称川味短句反思评论（含≤25字标题）</span>
                       </li>
                     </ul>
                   </div>
@@ -428,7 +575,7 @@ export default function App() {
                     <textarea
                       value={manualNote}
                       onChange={(e) => setManualNote(e.target.value)}
-                      placeholder="例如：重点突出工人老周的手部动作、或突出无人车雨中打滑的无助感..."
+                      placeholder="例如：若有打斗或敏感场景请自动转3D仿真人卡通；或重点突出工人老周的手部动作..."
                       rows={3}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
@@ -480,25 +627,39 @@ export default function App() {
                       全套内容已严格遵循所有红线过滤与格式规范，支持一键下载与批量复制
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-3 py-1.5 rounded-full flex items-center gap-1.5 self-start">
-                    <CheckCircle2 className="w-4 h-4" />
-                    全套合规质检通过
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {analysisResult.coverDesign?.hasSensitiveContent && (
+                      <span className="text-xs font-bold text-sky-400 bg-sky-950/80 border border-sky-800 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                        <Smile className="w-4 h-4 text-sky-300" />
+                        已启用3D卡通仿真人安全模式
+                      </span>
+                    )}
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      全套合规质检通过
+                    </span>
+                  </div>
                 </div>
 
                 {/* 1. The 3:4 Realistic Exaggerated Cover (Mandatory Short Chinese Title) */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center">
-                      1
-                    </span>
-                    <h3 className="text-base font-bold text-white">
-                      3:4 冲击力《写实夸张封面》（强制嵌入全中文短标题）
-                    </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center">
+                        1
+                      </span>
+                      <h3 className="text-base font-bold text-white">
+                        3:4 冲击力封面（视频截帧文字设计 / 暴力转3D仿真人）
+                      </h3>
+                    </div>
                   </div>
                   <CoverCanvas
                     coverDesign={analysisResult.coverDesign}
-                    frameImage={extractedFrames[0]?.dataUrl}
+                    frameImage={selectedCoverImage}
+                    availableFrames={extractedFrames}
+                    onSelectFrame={(imgUrl) => setSelectedCoverImage(imgUrl)}
+                    onSnapshotVideo={handleSnapshotVideo}
+                    cartoon3dImage={cartoon3dImage}
                   />
                 </div>
 
