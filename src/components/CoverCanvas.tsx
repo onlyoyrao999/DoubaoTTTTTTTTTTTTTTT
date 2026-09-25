@@ -119,6 +119,8 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const [currentSubtitle, setCurrentSubtitle] = useState<string>(
     coverDesign.subtitle || '30年老钳工突袭测试 · 机械臂3秒精准复测'
   );
+  // Subtitle placement: 'bottom_bar' (默认：封面底部独立横条 - 爆款短视频标配) | 'attached' (紧跟主标题下方)
+  const [subtitlePlacement, setSubtitlePlacement] = useState<'bottom_bar' | 'attached'>('bottom_bar');
 
   // Dynamic Visual Composition Title Position: 'top' | 'upper_middle' | 'middle' | 'bottom'
   const [titlePosition, setTitlePosition] = useState<'top' | 'upper_middle' | 'middle' | 'bottom'>(
@@ -272,9 +274,11 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       const title = currentShortTitle || coverDesign.shortTitle || '当场破防！';
       const subTitle = currentSubtitle !== undefined ? currentSubtitle : (coverDesign.subtitle || '');
       const hasSubtitle = Boolean(subTitle && subTitle.trim().length > 0);
+      const isSubtitleAttached = hasSubtitle && subtitlePlacement === 'attached';
+      const isSubtitleAtBottom = hasSubtitle && subtitlePlacement === 'bottom_bar';
 
-      const bannerHeight = hasSubtitle ? 220 : 170;
-      const bannerY = Math.max(60, Math.min(height - (hasSubtitle ? 290 : 240), baseBannerY + customOffsetY));
+      const bannerHeight = isSubtitleAttached ? 220 : 170;
+      const bannerY = Math.max(60, Math.min(height - (isSubtitleAttached ? 290 : 240), baseBannerY + customOffsetY));
       const badgeY = Math.max(10, Math.min(height - 310, baseBadgeY + customOffsetY));
 
       ctx.font = 'bold 28px sans-serif';
@@ -329,7 +333,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
       // 3A. MAIN TITLE RENDERING (主标题醒目大字)
       const maxTitleWidth = width * 0.9 * 0.72;
-      let fontSize = hasSubtitle ? 84 : 92;
+      let fontSize = isSubtitleAttached ? 84 : 94;
       ctx.font = `900 ${fontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
       let textWidth = ctx.measureText(title).width;
 
@@ -339,7 +343,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         textWidth = ctx.measureText(title).width;
       }
 
-      const titleY = hasSubtitle ? -bannerHeight * 0.18 : 0;
+      const titleY = isSubtitleAttached ? -bannerHeight * 0.18 : 0;
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -357,8 +361,8 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ctx.lineWidth = Math.max(2, fontSize * 0.05);
       ctx.strokeText(title, 0, titleY);
 
-      // 3B. SUBTITLE RENDERING (副标题小字)
-      if (hasSubtitle) {
+      // 3B. SUBTITLE RENDERING (副标题小字 - 紧随主标题模式)
+      if (isSubtitleAttached) {
         const subY = bannerHeight * 0.25;
         let subFontSize = 30;
         const maxSubWidth = width * 0.9 * 0.82;
@@ -392,6 +396,72 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       }
 
       ctx.restore();
+
+      // 3C. SUBTITLE RENDERING (副标题小字 - 封面底部经典解说条模式 / 爆款短视频标配)
+      if (isSubtitleAtBottom) {
+        const subBarY = titlePosition === 'bottom' ? expBoxY + expBoxHeight + 20 : height - 175;
+        const subBarHeight = 64;
+        const subBarWidth = width - 80;
+        const subBarX = 40;
+
+        ctx.save();
+        // Drop shadow for bottom subtitle bar
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 8;
+
+        // Gradient dark bar background
+        const grad = ctx.createLinearGradient(subBarX, subBarY, subBarX + subBarWidth, subBarY);
+        grad.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+        grad.addColorStop(0.5, 'rgba(2, 6, 23, 0.98)');
+        grad.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(subBarX, subBarY, subBarWidth, subBarHeight, 16);
+        ctx.fill();
+
+        // Gold border stroke
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Left Tag Badge: 【剧情速递】
+        const tagText = '● 关键反转';
+        ctx.font = 'bold 20px "Noto Sans SC", sans-serif';
+        const tagWidth = ctx.measureText(tagText).width + 24;
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.roundRect(subBarX + 16, subBarY + 12, tagWidth, subBarHeight - 24, 8);
+        ctx.fill();
+
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '900 18px "Noto Sans SC", sans-serif';
+        ctx.fillText(tagText, subBarX + 16 + tagWidth / 2, subBarY + subBarHeight / 2);
+
+        // Subtitle Text beside tag
+        const availableTextWidth = subBarWidth - tagWidth - 60;
+        let subFontSize = 26;
+        ctx.font = `bold ${subFontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+        let subWidth = ctx.measureText(subTitle).width;
+
+        while (subWidth > availableTextWidth && subFontSize > 16) {
+          subFontSize -= 2;
+          ctx.font = `bold ${subFontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+          subWidth = ctx.measureText(subTitle).width;
+        }
+
+        ctx.fillStyle = '#FEF08A';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        ctx.shadowBlur = 8;
+        ctx.fillText(subTitle, subBarX + tagWidth + 30, subBarY + subBarHeight / 2);
+
+        ctx.restore();
+      }
 
       // 4. Character Expression / 3D Stylized Label (位置根据标题自适应排布)
       ctx.fillStyle = 'rgba(10, 15, 25, 0.85)';
@@ -478,7 +548,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
   useEffect(() => {
     drawCover();
-  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode, currentShortTitle, currentSubtitle, titlePosition, customOffsetY]);
+  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode, currentShortTitle, currentSubtitle, subtitlePlacement, titlePosition, customOffsetY]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -512,7 +582,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部空白留白处（尽量写在空白处，严禁遮挡人物人脸与眼神）';
 
     const titleText = currentSubtitle
-      ? `醒目大字印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题小字“${currentSubtitle}”`
+      ? `醒目大字印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”，并在${subtitlePlacement === 'bottom_bar' ? '封面底部横条' : '主标题下方'}排版副标题小字“${currentSubtitle}”`
       : `用醒目加粗艺术字体印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
 
     const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；在${positionDesc}${titleText}（标题不限制字数，双层主副排版，尽量写在空白处，不在他人脸就行）；电影级景深光影，真实感拉满！`;
@@ -532,7 +602,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部留白空白处（置顶排版，避免遮挡中下部人物动作）';
 
     const titleText = currentSubtitle
-      ? `印上主标题大字“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题小字“${currentSubtitle}”`
+      ? `印上主标题大字“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”并在${subtitlePlacement === 'bottom_bar' ? '封面底部横条' : '主标题下方'}印上副标题小字“${currentSubtitle}”`
       : `印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
 
     const prompt3d = `@豆包 请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在${positionDesc}${titleText}（标题不限制字数，双层主副排版，尽量写在空白处，不在他人脸就行）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
@@ -552,7 +622,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）';
 
     const titleText = currentSubtitle
-      ? `醒目大字印上主标题“${currentShortTitle}”并在其旁排版副标题小字“${currentSubtitle}”`
+      ? `醒目大字印上主标题“${currentShortTitle}”，并在${subtitlePlacement === 'bottom_bar' ? '封面底部横条' : '主标题下方'}排版副标题小字“${currentSubtitle}”`
       : `醒目大字印上封面标题“${currentShortTitle}”`;
 
     const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！】请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；在${positionDesc}${titleText}（标题不要去限制多少字，大字主标题+小字副标题双层层次，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
@@ -760,6 +830,39 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Subtitle Placement Toggle */}
+                {currentSubtitle && (
+                  <div className="mt-2 bg-slate-950/60 p-2 rounded-xl border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5">
+                    <span className="text-[11px] text-amber-300/90 font-medium flex items-center gap-1">
+                      <span>📐 副标题位置：</span>
+                    </span>
+                    <div className="flex gap-1.5 w-full sm:w-auto">
+                      <button
+                        onClick={() => setSubtitlePlacement('bottom_bar')}
+                        className={`flex-1 sm:flex-none text-[11px] py-1 px-2.5 rounded-lg border font-bold transition flex items-center justify-center gap-1 ${
+                          subtitlePlacement === 'bottom_bar'
+                            ? 'bg-amber-400 text-black border-amber-300 shadow-md'
+                            : 'bg-slate-900/90 text-amber-200/70 border-slate-700 hover:border-amber-500/50'
+                        }`}
+                        title="顶部大字抓眼球，底部黑金解说条交代背景剧情，短视频爆款标准构图"
+                      >
+                        <span>📌 封面底部横条（推荐·爆款标配）</span>
+                      </button>
+                      <button
+                        onClick={() => setSubtitlePlacement('attached')}
+                        className={`flex-1 sm:flex-none text-[11px] py-1 px-2.5 rounded-lg border font-bold transition flex items-center justify-center gap-1 ${
+                          subtitlePlacement === 'attached'
+                            ? 'bg-amber-400 text-black border-amber-300 shadow-md'
+                            : 'bg-slate-900/90 text-amber-200/70 border-slate-700 hover:border-amber-500/50'
+                        }`}
+                        title="将副标题小字紧贴主标题大字下方，组合在同一标题卡片中"
+                      >
+                        <span>📎 紧跟主标题下方</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
