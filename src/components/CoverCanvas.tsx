@@ -543,10 +543,10 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部空白留白处（尽量写在空白处，严禁遮挡人物人脸与眼神）';
 
     const titleText = currentSubtitle
-      ? `在${positionDesc}用醒目大字印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”，并在【封面最底部】印上副标题小字解说条“${currentSubtitle}”`
+      ? `在${positionDesc}印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题“${currentSubtitle}”（主副标题大小字号与排版构图由百万美工网感自主决定，不设限制，避开人脸）`
       : `在${positionDesc}用醒目加粗艺术字体印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
 
-    const doubaoDrawPrompt = `@豆包 【封面标题与排版：请深度参考抖音全网百万美工封面排版体系自主创意设计，我们完全不插手、不设限，自由发挥顶级爆款美工网感】：帮我画一张3:4比例的${stylePrefix}，画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；${titleText}（主标题大字在上方留白处，副标题小字在封面最底部，绝不在大标题底部，完全不挡人脸）；电影级景深光影，真实感拉满！`;
+    const doubaoDrawPrompt = `@豆包 【封面标题与排版：请深度参考抖音全网百万美工封面排版体系自主创意设计，我们完全不插手、不设限，自由发挥顶级爆款美工网感】：帮我画一张3:4比例的${stylePrefix}，画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；${titleText}（完全不遮挡人脸与眼神）；电影级景深光影，真实感拉满！`;
     navigator.clipboard.writeText(doubaoDrawPrompt);
     setCopiedDoubaoDraw(true);
     setTimeout(() => setCopiedDoubaoDraw(false), 2500);
@@ -563,10 +563,10 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部留白空白处（置顶排版，避免遮挡中下部人物动作）';
 
     const titleText = currentSubtitle
-      ? `在${positionDesc}印上主标题大字“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”，并在【封面最底部】印上副标题小字“${currentSubtitle}”`
+      ? `在${positionDesc}印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题“${currentSubtitle}”（百万美工自主排版，不限大小字与位置，不挡脸）`
       : `在${positionDesc}印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
 
-    const prompt3d = `@豆包 【封面设计与排版：请参考抖音百万美工封面排版体系自主创作，我们不插手、不设限】：请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，${titleText}（主标题大字在上方留白处，副标题小字在封面最底部，不挡脸）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
+    const prompt3d = `@豆包 【封面设计与排版：请参考抖音百万美工封面排版体系自主创作，我们不插手、不设限】：请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，${titleText}（主副标题大小字与排版全由你决定，不挡脸）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
     navigator.clipboard.writeText(prompt3d);
     setCopied3dPrompt(true);
     setTimeout(() => setCopied3dPrompt(false), 2500);
@@ -583,10 +583,10 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         : '画面顶部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）';
 
     const titleText = currentSubtitle
-      ? `在${positionDesc}醒目大字印上主标题“${currentShortTitle}”，并在【封面最底部】排版副标题小字解说条“${currentSubtitle}”`
+      ? `在${positionDesc}印上主标题“${currentShortTitle}”与副标题“${currentSubtitle}”（主副标题大小字与排版位置由百万美工自主设计，不设限制，绝不遮挡人脸与关键动作）`
       : `在${positionDesc}醒目大字印上封面标题“${currentShortTitle}”`;
 
-    const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！封面设计与排版：请深度参考抖音全网百万美工封面排版体系自主设计，我们完全不插手、不设限，自由发挥顶级美工网感】：请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；${titleText}（主标题大字在上方空白处，副标题小字在封面最底部，绝不在大标题底部，完全不遮挡人脸！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
+    const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！封面设计与排版：请深度参考抖音全网百万美工封面排版体系自主设计，我们完全不插手、不设限，自由发挥顶级美工网感】：请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；${titleText}（完全不遮挡人脸！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
     navigator.clipboard.writeText(prompt1to1);
     setCopied1to1Prompt(true);
     setTimeout(() => setCopied1to1Prompt(false), 2500);
@@ -762,15 +762,15 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                 </div>
               </div>
 
-              {/* Subtitle Input (小字 - 严格位于封面底部) */}
+              {/* Subtitle Input (大字/小字 · 位置均不限) */}
               <div>
                 <div className="flex items-center justify-between mb-1 text-[11px] text-amber-300/80">
                   <span className="flex items-center gap-1">
-                    <span className="bg-amber-900/90 text-amber-200 border border-amber-600 font-bold px-1.5 py-0.5 rounded text-[10px]">小字</span>
-                    <strong>副标题（排在封面最底部）</strong>
+                    <span className="bg-sky-900/90 text-sky-200 border border-sky-600 font-bold px-1.5 py-0.5 rounded text-[10px]">副标</span>
+                    <strong>副标题（大小字、位置均不限）</strong>
                   </span>
                   <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-0.5">
-                    <span>📍 严格置于封面最底部</span>
+                    <span>✨ 大小字不限 · 百万美工自由发挥</span>
                   </span>
                 </div>
 
@@ -779,7 +779,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                     type="text"
                     value={currentSubtitle}
                     onChange={(e) => setCurrentSubtitle(e.target.value)}
-                    placeholder="输入封面底部副标题小字（如：30年老钳工突袭测试 · 机械臂3秒精准复测）..."
+                    placeholder="输入副标题（可大字可小字，排版位置由百万美工自主决策）..."
                     className="w-full bg-slate-950/90 border border-amber-500/40 focus:border-amber-400 text-amber-200 font-medium text-xs sm:text-sm px-3 py-2 rounded-xl focus:outline-none tracking-wide shadow-inner"
                   />
                   {currentSubtitle && (
