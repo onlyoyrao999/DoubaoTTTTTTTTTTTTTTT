@@ -89,6 +89,7 @@ export default function App() {
     timeline: SAMPLE_VIDEOS[0].mockTimeline,
     coverDesign: {
       shortTitle: SAMPLE_VIDEOS[0].mockShortTitle,
+      subtitle: SAMPLE_VIDEOS[0].mockSubtitle,
       characterExpression:
         '采用原片自动截帧真实面容与表情：老钳工眉头紧锁，眼神震颤，满是油污的手指紧握卡尺，100%沿用原片真实表情与肢体，未经任何虚构变造',
       visualDescription:
@@ -209,6 +210,7 @@ export default function App() {
       timeline: sample.mockTimeline,
       coverDesign: {
         shortTitle: sample.mockShortTitle,
+        subtitle: sample.mockSubtitle,
         characterExpression: '真实还原原片原始表情与神态：眼神专注凝滞，动作自然朴实，没有刻意夸张，完全忠实呈现生活实况质感',
         visualDescription: '3:4竖版构图，强烈光影与色彩对比，高动态戏剧性瞬间抓拍',
         promptChinese: '3:4写实纪实海报，人物神态极具情绪张力，电影级景深与质感',

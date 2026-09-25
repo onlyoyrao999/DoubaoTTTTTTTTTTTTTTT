@@ -116,6 +116,9 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const [currentShortTitle, setCurrentShortTitle] = useState<string>(
     coverDesign.shortTitle || '当场破防！'
   );
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>(
+    coverDesign.subtitle || '30年老钳工突袭测试 · 机械臂3秒精准复测'
+  );
 
   // Dynamic Visual Composition Title Position: 'top' | 'upper_middle' | 'middle' | 'bottom'
   const [titlePosition, setTitlePosition] = useState<'top' | 'upper_middle' | 'middle' | 'bottom'>(
@@ -137,6 +140,9 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
     }
     if (coverDesign.shortTitle) {
       setCurrentShortTitle(coverDesign.shortTitle);
+    }
+    if (coverDesign.subtitle !== undefined) {
+      setCurrentSubtitle(coverDesign.subtitle);
     }
     if (coverDesign.titleSource) {
       setTitleSourceMode(coverDesign.titleSource === 'voiceover' ? 'voiceover' : 'visual_action');
@@ -262,8 +268,13 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         expBoxHeight = 150;
       }
 
-      const bannerHeight = 170;
-      const bannerY = Math.max(60, Math.min(height - 240, baseBannerY + customOffsetY));
+      // 3. MANDATORY CHINESE MAIN TITLE + SUBTITLE (双层主副标题架构：大字主标题 + 小字副标题)
+      const title = currentShortTitle || coverDesign.shortTitle || '当场破防！';
+      const subTitle = currentSubtitle !== undefined ? currentSubtitle : (coverDesign.subtitle || '');
+      const hasSubtitle = Boolean(subTitle && subTitle.trim().length > 0);
+
+      const bannerHeight = hasSubtitle ? 220 : 170;
+      const bannerY = Math.max(60, Math.min(height - (hasSubtitle ? 290 : 240), baseBannerY + customOffsetY));
       const badgeY = Math.max(10, Math.min(height - 310, baseBadgeY + customOffsetY));
 
       ctx.font = 'bold 28px sans-serif';
@@ -284,9 +295,6 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(badgeText, width / 2, badgeY + 26);
-
-      // 3. MANDATORY CHINESE SHORT TITLE (根据封面视觉构图动态决定位置，避让人脸与核心动作)
-      const title = currentShortTitle || coverDesign.shortTitle || '当场破防！';
 
       ctx.save();
       // Slight aggressive tilt for impact (-2 degrees)
@@ -319,9 +327,9 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ctx.fillRect(i, -bannerHeight / 2 + 10, 12, bannerHeight - 20);
       }
 
-      // Title text rendering - Dynamic font sizing without word count limitation
+      // 3A. MAIN TITLE RENDERING (主标题醒目大字)
       const maxTitleWidth = width * 0.9 * 0.72;
-      let fontSize = 92;
+      let fontSize = hasSubtitle ? 84 : 92;
       ctx.font = `900 ${fontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
       let textWidth = ctx.measureText(title).width;
 
@@ -331,21 +339,57 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         textWidth = ctx.measureText(title).width;
       }
 
+      const titleY = hasSubtitle ? -bannerHeight * 0.18 : 0;
+
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       // Text 3D bottom extrusion
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillText(title, 0, Math.max(4, fontSize * 0.08));
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillText(title, 0, titleY + Math.max(4, fontSize * 0.08));
 
       // Main Text Fill
       ctx.fillStyle = theme.textColor;
-      ctx.fillText(title, 0, 0);
+      ctx.fillText(title, 0, titleY);
 
       // Crisp contrast stroke
       ctx.strokeStyle = theme.strokeColor;
       ctx.lineWidth = Math.max(2, fontSize * 0.05);
-      ctx.strokeText(title, 0, 0);
+      ctx.strokeText(title, 0, titleY);
+
+      // 3B. SUBTITLE RENDERING (副标题小字)
+      if (hasSubtitle) {
+        const subY = bannerHeight * 0.25;
+        let subFontSize = 30;
+        const maxSubWidth = width * 0.9 * 0.82;
+        ctx.font = `bold ${subFontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+        let subWidth = ctx.measureText(subTitle).width;
+
+        while (subWidth > maxSubWidth && subFontSize > 18) {
+          subFontSize -= 2;
+          ctx.font = `bold ${subFontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+          subWidth = ctx.measureText(subTitle).width;
+        }
+
+        // Subtitle container pill
+        const subPillWidth = Math.min(width * 0.82, subWidth + 40);
+        const subPillHeight = Math.max(38, subFontSize + 14);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
+        ctx.beginPath();
+        ctx.roundRect(-subPillWidth / 2, subY - subPillHeight / 2, subPillWidth, subPillHeight, 10);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Subtitle Text Fill
+        ctx.fillStyle = '#FEF08A';
+        ctx.font = `bold ${subFontSize}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 6;
+        ctx.fillText(subTitle, 0, subY);
+      }
 
       ctx.restore();
 
@@ -434,7 +478,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
   useEffect(() => {
     drawCover();
-  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode, currentShortTitle, titlePosition, customOffsetY]);
+  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode, currentShortTitle, currentSubtitle, titlePosition, customOffsetY]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -467,7 +511,11 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ? '画面中上留白空白处（避开人脸）'
         : '画面顶部空白留白处（尽量写在空白处，严禁遮挡人物人脸与眼神）';
 
-    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；在${positionDesc}用醒目加粗艺术字体印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”（标题不限制字数，尽量写在空白处，不在他人脸就行）；电影级景深光影，真实感拉满！`;
+    const titleText = currentSubtitle
+      ? `醒目大字印上主标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题小字“${currentSubtitle}”`
+      : `用醒目加粗艺术字体印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
+
+    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：画面主体为特写人物，采用真人写真纪实质感，面部表情不用刻意夸张，注重还原截图中很原始自然的真实神情与生活微表情：${coverDesign.characterExpression}；在${positionDesc}${titleText}（标题不限制字数，双层主副排版，尽量写在空白处，不在他人脸就行）；电影级景深光影，真实感拉满！`;
     navigator.clipboard.writeText(doubaoDrawPrompt);
     setCopiedDoubaoDraw(true);
     setTimeout(() => setCopiedDoubaoDraw(false), 2500);
@@ -483,7 +531,11 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ? '画面中上留白空白处（避开人脸）'
         : '画面顶部留白空白处（置顶排版，避免遮挡中下部人物动作）';
 
-    const prompt3d = `@豆包 请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在${positionDesc}印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”（标题不限制字数，尽量写在空白处，不在他人脸就行）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
+    const titleText = currentSubtitle
+      ? `印上主标题大字“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”与副标题小字“${currentSubtitle}”`
+      : `印上封面标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”`;
+
+    const prompt3d = `@豆包 请用3D卡通仿真人形式重新绘制生成3:4封面：画面人物为逼真3D动画角色，真实还原生活神情，避开血腥暴力，在${positionDesc}${titleText}（标题不限制字数，双层主副排版，尽量写在空白处，不在他人脸就行）。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
     navigator.clipboard.writeText(prompt3d);
     setCopied3dPrompt(true);
     setTimeout(() => setCopied3dPrompt(false), 2500);
@@ -499,7 +551,11 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
         ? '画面中上空白处（避开人脸）'
         : '画面顶部空白留白处（排版尽量写在空白处，绝不能遮挡他的人脸和眼睛）';
 
-    const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！】请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；在${positionDesc}醒目大字印上封面标题“${currentShortTitle}”（标题不要去限制多少字，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
+    const titleText = currentSubtitle
+      ? `醒目大字印上主标题“${currentShortTitle}”并在其旁排版副标题小字“${currentSubtitle}”`
+      : `醒目大字印上封面标题“${currentShortTitle}”`;
+
+    const prompt1to1 = `@豆包 【核心铁律：自动截取的这张图必须用于垫图重新生成！】请务必以我上传的这张视频原片自动截图为垫图底图（以图生图重新生成）：必须采用真人写实画风，严格 1:1 还原截图中人物的真实面孔、五官特征、皮肤质感与衣着细节（严禁脱离本图凭空乱画假人！）；面部表情不用刻意夸张，完全还原截图本身的原始真实生活表情与自然微表情；在${positionDesc}${titleText}（标题不要去限制多少字，大字主标题+小字副标题双层层次，依内容自然精炼表达；尽量写在空白处，不在他的人脸就行！），重新生成 3:4 比例超清真人写实电影质感封面海报！`;
     navigator.clipboard.writeText(prompt1to1);
     setCopied1to1Prompt(true);
     setTimeout(() => setCopied1to1Prompt(false), 2500);
@@ -648,63 +704,117 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
               </div>
             </div>
 
-            {/* Current Short Title Big Banner & Live Edit */}
-            <div>
-              <div className="flex items-center justify-between mb-1 text-[11px] text-amber-300/80">
-                <span className="flex items-center gap-1">
-                  {titleSourceMode === 'voiceover' ? (
-                    <>
-                      <Volume2 className="w-3.5 h-3.5 text-sky-400" />
-                      当前来源：<strong>原声口播关键冲突金句</strong>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-3.5 h-3.5 text-amber-400" />
-                      当前来源：<strong>无口播现场 · 纯画面核心动作/道具反转</strong>
-                    </>
-                  )}
-                </span>
-                <span className="text-xs text-amber-300/90 font-medium">
-                  ✨ 标题不限字数（字号自适应）· 尽量排在空白处避让人脸
-                </span>
-              </div>
+            {/* Current Title & Subtitle Dual-Track Live Edit */}
+            <div className="space-y-3">
+              {/* Main Title Input (大字) */}
+              <div>
+                <div className="flex items-center justify-between mb-1 text-[11px] text-amber-300/80">
+                  <span className="flex items-center gap-1">
+                    <span className="bg-amber-500 text-black font-extrabold px-1.5 py-0.5 rounded text-[10px]">大字</span>
+                    <strong>主标题</strong>
+                    {titleSourceMode === 'voiceover' ? '（提取原声冲突金句）' : '（纯画面动作反转）'}
+                  </span>
+                  <span className="text-[11px] text-amber-300/90 font-medium">
+                    ✨ 不限字数 · 字号自适应
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
+                <div className="relative">
                   <input
                     type="text"
                     value={currentShortTitle}
                     onChange={(e) => setCurrentShortTitle(e.target.value)}
-                    placeholder="输入封面标题（不限字数，字号自适应缩放，尽量写在空白处避开人脸）..."
+                    placeholder="输入主标题大字（如：当场破防！、一杠救命！、真敢硬刚？）..."
                     className="w-full bg-slate-950/90 border-2 border-amber-500/60 focus:border-amber-400 text-amber-100 font-black text-xl sm:text-2xl px-3 py-2 rounded-xl focus:outline-none tracking-wider shadow-inner"
                   />
                   <Edit3 className="w-4 h-4 text-amber-400/60 absolute right-3 top-3.5 pointer-events-none" />
                 </div>
               </div>
+
+              {/* Subtitle Input (小字) */}
+              <div>
+                <div className="flex items-center justify-between mb-1 text-[11px] text-amber-300/80">
+                  <span className="flex items-center gap-1">
+                    <span className="bg-amber-900/90 text-amber-200 border border-amber-600 font-bold px-1.5 py-0.5 rounded text-[10px]">小字</span>
+                    <strong>副标题（补充说明/剧情反转）</strong>
+                  </span>
+                  <span className="text-[11px] text-amber-300/70">
+                    {currentSubtitle ? '双层排版已启用' : '（留空则为单层大字）'}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={currentSubtitle}
+                    onChange={(e) => setCurrentSubtitle(e.target.value)}
+                    placeholder="输入副标题小字（如：30年老钳工突袭测试 · 机械臂3秒精准复测）..."
+                    className="w-full bg-slate-950/90 border border-amber-500/40 focus:border-amber-400 text-amber-200 font-medium text-xs sm:text-sm px-3 py-2 rounded-xl focus:outline-none tracking-wide shadow-inner"
+                  />
+                  {currentSubtitle && (
+                    <button
+                      onClick={() => setCurrentSubtitle('')}
+                      className="absolute right-2.5 top-2 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-2 py-1 rounded"
+                    >
+                      清空
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Quick Candidate Preset Chips */}
-            <div>
-              <div className="text-[11px] text-amber-400/90 font-medium mb-1.5 flex items-center gap-1">
-                <span>⚡ 常用爆款短标题快速备选（点击即刻换上）：</span>
+            <div className="space-y-2">
+              <div>
+                <div className="text-[11px] text-amber-400/90 font-medium mb-1.5 flex items-center gap-1">
+                  <span>⚡ 常用【主标题大字】快速备选：</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(titleSourceMode === 'visual_action'
+                    ? ['反手递尺！', '一杠救命！', '当场破防！', '火勺翻飞！', '直接掀桌！', '三秒打脸！']
+                    : ['真敢硬刚？', '这单我不接！', '卡尺不认人！', '凭啥算力强？', '别逼我动手！', '尊严砸了？']
+                  ).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setCurrentShortTitle(t)}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition font-bold ${
+                        currentShortTitle === t
+                          ? 'bg-amber-400 text-black border-amber-300 shadow'
+                          : 'bg-black/40 border-amber-500/30 text-amber-200 hover:border-amber-400 hover:text-white'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(titleSourceMode === 'visual_action'
-                  ? ['反手递尺！', '一杠救命！', '当场破防！', '火勺翻飞！', '直接掀桌！', '三秒打脸！']
-                  : ['真敢硬刚？', '这单我不接！', '卡尺不认人！', '凭啥算力强？', '别逼我动手！', '尊严砸了？']
-                ).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setCurrentShortTitle(t)}
-                    className={`text-xs px-2.5 py-1 rounded-lg border transition font-bold ${
-                      currentShortTitle === t
-                        ? 'bg-amber-400 text-black border-amber-300 shadow'
-                        : 'bg-black/40 border-amber-500/30 text-amber-200 hover:border-amber-400 hover:text-white'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+
+              <div>
+                <div className="text-[11px] text-amber-400/90 font-medium mb-1.5 flex items-center gap-1">
+                  <span>⚡ 常用【副标题小字】快速备选：</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '30年老钳工突袭测试 · 机械臂3秒精准复测',
+                    '暴雨无人车失控打滑 · 卖菜大叔舍身顶轮',
+                    '20年掌勺被芯片取代 · 蹲在后门点烟出神',
+                    '全车间瞬间鸦雀无声',
+                    '下意识愣在原地3秒',
+                    '一根旧扁担救了全场',
+                  ].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setCurrentSubtitle(st)}
+                      className={`text-[11px] px-2 py-0.5 rounded-lg border transition ${
+                        currentSubtitle === st
+                          ? 'bg-amber-900/90 text-amber-200 border-amber-400 font-bold'
+                          : 'bg-black/30 border-amber-500/20 text-slate-300 hover:text-white hover:border-amber-500/40'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

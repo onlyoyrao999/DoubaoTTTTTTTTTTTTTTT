@@ -13,6 +13,7 @@ export interface SampleVideoOption {
     tension: number;
   }>;
   mockShortTitle: string;
+  mockSubtitle?: string;
   mockCoverPrompt: string;
   mockViewerComment: string;
   mockCommentTitle: string;
@@ -62,6 +63,7 @@ export const SAMPLE_VIDEOS: SampleVideoOption[] = [
       },
     ],
     mockShortTitle: '当场破防！',
+    mockSubtitle: '30年老钳工突袭测试 · 机械臂3秒精准复测',
     mockCoverPrompt: 'Photorealistic dramatic 3:4 cinematic movie poster, close-up shot of an elderly weathered Chinese blue-collar machinist with grease on forehead, eyes wide open in sheer shock, mouth slightly parted, tense facial muscles, holding a metal wrench in hand, glowing industrial laser reflection in background, high contrast lighting, gritty documentary texture.',
     mockViewerComment: '说老实话，老周把那根烟猛抽到过滤嘴，一把掐灭在机器底座上。手指头还发着抖，狠搓了两把脸。硬是没想到三十多年的手艺，被个铁架子三秒钟看穿。大家辛辛苦苦熬白了头，明天还能靠这双手吃上饭不？',
     mockCommentTitle: '老周掐灭烟头那一刻，三十年饭碗还端得稳吗',
@@ -126,6 +128,7 @@ export const SAMPLE_VIDEOS: SampleVideoOption[] = [
       },
     ],
     mockShortTitle: '一杠救命！',
+    mockSubtitle: '暴雨无人车失控打滑 · 卖菜大叔舍身顶轮',
     mockCoverPrompt: 'Photorealistic ultra-detailed 3:4 poster, an intense middle-aged Asian street vendor drenched in heavy rain, gritting his teeth in extreme physical exertion, veins bulging on muscular neck, using a bamboo shoulder pole to push a high-tech delivery pod up a slippery street, splashing muddy water, dramatic streetlights and neon reflection, emotional documentary cinema style.',
     mockViewerComment: '算求了，抹一把脸上的雨水，大叔转身把扁担往菜筐旁边一扔。双手冰凉，骨头节都冻得发红。满大街都是算力算法，陷在烂泥巴里还不是靠人力硬撑。往后真要全靠机器，大街上还能剩下几个活人的人情味？',
     mockCommentTitle: '大叔扔掉扁担抹把雨水，算力能算得出人心温度吗',
@@ -190,6 +193,7 @@ export const SAMPLE_VIDEOS: SampleVideoOption[] = [
       },
     ],
     mockShortTitle: '饭碗砸了？',
+    mockSubtitle: '20年掌勺被芯片取代 · 蹲在后门点烟出神',
     mockCoverPrompt: 'Photorealistic 3:4 movie still poster, close-up of a rugged Asian chef sitting on stone steps in dark alley, smoke rising from a cigarette between his rough fingers, tired eyes reflecting glowing restaurant neon, mouth pressed into a bitter tight line, face bathed in dramatic warm orange and cold blue chiaroscuro lighting, visceral dramatic tension.',
     mockViewerComment: '格老子，老陈在台阶上猛跺了两脚，把烟蒂直接按进墙缝里。火星子在黑夜里一闪就熄了。二十年练就的一条舌头和颠勺功夫，抵不上一个芯片调的火候。要是连锅气都能按克计算，咱们以后下的馆子到底算是食堂还是流水线？',
     mockCommentTitle: '老陈把烟蒂按进墙缝，连锅气都能量化我们还吃啥',

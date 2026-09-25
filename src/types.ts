@@ -17,7 +17,8 @@ export interface TimelineItem {
 }
 
 export interface CoverDesign {
-  shortTitle: string;
+  shortTitle: string; // 主标题大字
+  subtitle?: string; // 副标题小字
   characterExpression: string;
   visualDescription: string;
   promptChinese: string;
