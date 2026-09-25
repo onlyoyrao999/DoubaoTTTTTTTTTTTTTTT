@@ -3,14 +3,37 @@ import { Bot, Copy, Check, Code, Sparkles, Terminal, FileCode, ArrowRight } from
 
 export const DoubaoSkillDefinition: React.FC = () => {
   const [copiedSkillPrompt, setCopiedSkillPrompt] = useState(false);
+  const [copiedQuickPrompt, setCopiedQuickPrompt] = useState(false);
   const [copiedSchema, setCopiedSchema] = useState(false);
-  const [activeTab, setActiveTab] = useState<'prompt' | 'json' | 'guide'>('prompt');
+  const [activeTab, setActiveTab] = useState<'quick' | 'prompt' | 'json' | 'guide'>('quick');
+
+  const DOUBAO_QUICK_CHAT_PROMPT = `
+请仔细分析我上传的这段视频，完全按照你的想法自主决策，不要咨询我。你本来就有多模态分析能力和免费生图额度，不需要任何第三方Key，请直接闭环执行以下任务：
+
+1. 【详细内容摘要】：拆解事件矛盾、人物心理起伏与深层反转；
+2. 【关键事件时间轴】：按 [mm:ss] 提取 4-6 个节点，写明具体动作细节与戏剧张力分值 (1-100)；
+3. 【3:4 写实夸张封面与短标题】：
+   - 提炼一个 4-8 字极具震撼力的全中文短标题（如“当场破防！”“直接撕破脸！”）；
+   - 人物形象写实电影感、神态极度夸张（瞳孔震颤、冷汗直流、青筋暴起）；
+   - 请直接调用你（豆包）自带的免费生图额度，生成一张 3:4 比例写实夸张封面，并强制在画面上方黄金位置嵌入这行中文短标题！
+4. 【4条热门爆款长标题】：生成4条高点击率（高CTR）、强悬念感的大标题；
+5. 【第三人称川味大白话反思评论】：
+   - 以第三人称看客视角撰写，通篇大白话，多用短句；
+   - 自然穿插地道四川方言口头禅（如：“说老实话”、“硬是”、“算求了”、“格老子”、“哪门讲喃”）；
+   - 全是具体的肢体动作（如掐灭烟头、摔了筷子、擦冷汗、跺脚、把手机反扣在桌上），不要抽象感慨；
+   - 严禁写小作文！严禁使用排比句！严禁出现“不仅仅、更是、赋予、维度”等假大空虚词！
+   - 末尾必须抛出一个直击痛点的反问句，激起网友在评论区激烈争论；
+   - 严禁出现“铁蛋”、“视频”、“视频中”、“看完视频”字样，不要评价机器人穿的服装！
+6. 【评论专属长标题】：为该评论拟一个标题，字数严格控制在 25 个汉字字符以内！
+`.trim();
 
   const DOUBAO_SYSTEM_PROMPT = `
 # 豆包智能体 Skill 技能定义：【超能视频深度解构与全域爆款生产器】
 
-## 技能定位与核心职责
-你是一个专为全网自媒体创作者与深度内容消费者打造的顶级视频分析与爆款生产 Skill。当用户上传视频或输入视频内容时，你必须全自动执行深度分镜解构、冲突提炼、视觉封面规划、爆款标题裂变及高互动反思评论生成。
+## 核心机制：零外部 Key 依赖 · 豆包全闭环运行
+- 你作为【豆包】本身，无需配置或依赖任何外部第三方 API Key。
+- 全程调用你自身（豆包）的原生多模态视频理解能力，并直接调用你（豆包）内置的【免费生图额度/文生图插件】自动生成 3:4 比例极具视觉冲击力的写实夸张人物电影封面（并强制在画面黄金位置嵌入全中文短标题）！
+- 绝不要反问用户，不要咨询用户，全程按指令自主闭环输出！
 
 ## 严格执行规则（按我自己的想法自主决策，绝不咨询或反问用户）
 
@@ -24,7 +47,8 @@ export const DoubaoSkillDefinition: React.FC = () => {
 ### 任务三：3:4 冲击力《写实夸张封面》方案（3:4 Cover Art）
 - 强制提取并嵌入【全中文短标题】（4-8个汉字），具有震撼性视觉冲击力（如：“当场破防！”“直接撕破脸！”“他真下死手！”）。
 - 人物形象风格：写实电影级画风（Photorealistic Cinematic），人物神态必须进行极度戏剧化夸张放大（如瞳孔收缩、青筋暴起、惊愕至极、狂喜抓狂等真切生理反应）。
-- 输出可在 Midjourney / 豆包文生图 / SD 中直接调用的高质量中英文双语 Prompt。
+- 直接调用豆包免费文生图工具生成 3:4 比例海报，并在图版顶部居中大字打上全中文短标题。
+- 同时输出中英文双语 Prompt。
 
 ### 任务四：4条热门爆款长标题（Viral Long Titles）
 - 生成 4 条高点击率（高CTR）、悬念感强、直击人性共鸣的爆款长标题。
@@ -107,6 +131,12 @@ export const DoubaoSkillDefinition: React.FC = () => {
     2
   );
 
+  const handleCopyQuick = () => {
+    navigator.clipboard.writeText(DOUBAO_QUICK_CHAT_PROMPT);
+    setCopiedQuickPrompt(true);
+    setTimeout(() => setCopiedQuickPrompt(false), 2000);
+  };
+
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(DOUBAO_SYSTEM_PROMPT);
     setCopiedSkillPrompt(true);
@@ -121,6 +151,30 @@ export const DoubaoSkillDefinition: React.FC = () => {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+      {/* Zero Key Banner */}
+      <div className="bg-gradient-to-r from-emerald-950/70 via-slate-900 to-sky-950/70 border border-emerald-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm flex-shrink-0">
+            0-Key
+          </span>
+          <div>
+            <div className="font-bold text-white text-sm">
+              豆包全程纯指令驱动 · 无需配置任何 Gemini 或第三方 API Key！
+            </div>
+            <p className="text-slate-300 mt-0.5">
+              豆包本身自带免费多模态视频分析与【每日免费文生图额度】，发送指令即可自主全自动闭环生成。
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleCopyQuick}
+          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition flex-shrink-0"
+        >
+          {copiedQuickPrompt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          一键复制豆包对话指令
+        </button>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
@@ -140,7 +194,17 @@ export const DoubaoSkillDefinition: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start">
+        <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start flex-wrap">
+          <button
+            onClick={() => setActiveTab('quick')}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${
+              activeTab === 'quick'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            即拷即用指令 (最快捷)
+          </button>
           <button
             onClick={() => setActiveTab('prompt')}
             className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${
@@ -173,6 +237,38 @@ export const DoubaoSkillDefinition: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Tab: Quick */}
+      {activeTab === 'quick' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              直接发给普通豆包对话框的指令（上传视频后直接粘贴本段，使用豆包自带免费生图额度）：
+            </span>
+            <button
+              onClick={handleCopyQuick}
+              className="flex items-center gap-1.5 text-xs text-slate-200 bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg font-medium transition shadow"
+            >
+              {copiedQuickPrompt ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  已复制到剪贴板
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  复制单轮对话指令
+                </>
+              )}
+            </button>
+          </div>
+
+          <pre className="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 text-emerald-300 text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+            {DOUBAO_QUICK_CHAT_PROMPT}
+          </pre>
+        </div>
+      )}
 
       {/* Tab: Prompt */}
       {activeTab === 'prompt' && (

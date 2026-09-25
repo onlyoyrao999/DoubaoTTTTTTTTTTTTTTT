@@ -76,6 +76,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<CoverTheme>('hazard');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedDoubaoDraw, setCopiedDoubaoDraw] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
 
   const drawCover = () => {
@@ -343,6 +344,13 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
     setTimeout(() => setCopiedPrompt(false), 2500);
   };
 
+  const handleCopyDoubaoDraw = () => {
+    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的电影级写实夸张人物封面海报：画面顶部正中央用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，神态极其戏剧化夸张震撼：${coverDesign.characterExpression}；强对比度高动态光影，粗粝纪实胶片质感。`;
+    navigator.clipboard.writeText(doubaoDrawPrompt);
+    setCopiedDoubaoDraw(true);
+    setTimeout(() => setCopiedDoubaoDraw(false), 2500);
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col xl:flex-row gap-6">
       {/* 3:4 Preview Container */}
@@ -449,21 +457,38 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
           </div>
         </div>
 
-        {/* Copy Prompt for Doubao / Midjourney */}
-        <div className="pt-2">
+        {/* Copy Prompts for Doubao / Midjourney */}
+        <div className="pt-2 space-y-2">
+          <button
+            onClick={handleCopyDoubaoDraw}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
+          >
+            {copiedDoubaoDraw ? (
+              <>
+                <Check className="w-4 h-4" />
+                已复制豆包生图指令 (直接在豆包对话框粘贴)
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-emerald-200" />
+                一键复制【发给豆包的生图指令】(利用豆包免费额度)
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleCopyPrompt}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold py-2.5 px-4 rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
           >
             {copiedPrompt ? (
               <>
                 <Check className="w-4 h-4 text-emerald-400" />
-                已复制生图专业提示词 (Prompt)
+                已复制中英双语 Prompt
               </>
             ) : (
               <>
                 <Copy className="w-4 h-4 text-slate-400" />
-                一键复制 3:4 封面生图 Prompt (中/英双语)
+                复制 3:4 封面生图 Prompt (中/英双语)
               </>
             )}
           </button>

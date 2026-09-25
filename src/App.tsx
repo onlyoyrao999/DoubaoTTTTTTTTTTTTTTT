@@ -193,12 +193,12 @@ export default function App() {
                 <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
                   豆包 AI 视频智能分析与爆款生产 Skill
                 </h1>
-                <span className="hidden sm:inline-block text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  自媒体核弹级
+                <span className="hidden sm:inline-block text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  零Key · 豆包自带免费生图
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                全自动分镜摘要 · 3:4写实夸张封面（强制中文短标题） · 4条爆款长标题 · 川味大白话反思评论
+                纯指令驱动 · 全自动分镜摘要 · 3:4写实夸张封面（强制中文短标题） · 4条爆款长标题 · 川味大白话反思评论
               </p>
             </div>
           </div>
@@ -220,12 +220,12 @@ export default function App() {
               onClick={() => setActiveMainTab('doubao-spec')}
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
                 activeMainTab === 'doubao-spec'
-                  ? 'bg-sky-600 text-white shadow'
+                  ? 'bg-emerald-600 text-white shadow'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Bot className="w-3.5 h-3.5" />
-              豆包 Skill 规则定义
+              豆包 Skill 指令中心 (免Key)
             </button>
           </div>
         </div>
@@ -237,13 +237,16 @@ export default function App() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-semibold text-white">豆包自主执行引擎：</span>
-            <span>已启用“不要咨询我，按你自己的想法”全自动全闭环决策机制</span>
+            <span className="font-semibold text-white">豆包原生全自主执行：</span>
+            <span>完全基于指令自主驱动，利用豆包自身多模态视觉与免费生图额度闭环完成</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400">
-            <span className="text-amber-400/90 font-medium">严禁词过滤: 铁蛋 / 视频中 / 看完视频</span>
-            <span className="text-indigo-400/90 font-medium">语言调性: 四川方言大白话短句</span>
-            <span className="text-rose-400/90 font-medium">标题限制: 评论标题严格 ≤ 25 字</span>
+            <span className="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
+              无需任何外部Key
+            </span>
+            <span className="text-amber-400/90 font-medium">严禁词: 铁蛋 / 视频中 / 看完视频</span>
+            <span className="text-indigo-400/90 font-medium">语言调性: 四川方言短句</span>
+            <span className="text-rose-400/90 font-medium">评论标题严格 ≤ 25 字</span>
           </div>
         </div>
 
