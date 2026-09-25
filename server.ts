@@ -75,7 +75,7 @@ function generateNativeDoubaoResult(
   // Smart autonomous topic detection
   let shortTitle = '当场破防！';
   let badge = '实录反转 · 现场抓拍';
-  let characterExp = '极度写实电影画质，人物神情骤变，眼角剧烈抽搐，嘴角紧绷，瞳孔震惊收缩，充满戏剧性张力';
+  let characterExp = '采用原片自动截帧真实面容与表情：人物神情骤变，眼角下意识抽搐，嘴角紧绷，瞳孔震惊收缩，100%源自原片实况抓拍';
   let promptEn = 'Photorealistic dramatic 3:4 cinematic poster, intense close-up of protagonist showing sheer shock and dramatic tension, gritty hyper-realistic skin texture, high dynamic contrast lighting, movie still.';
   let commentTitle = '掐灭烟头那一瞬间，我们还能靠双手撑多久';
   let viewerComment = '说老实话，他把那截烟蒂狠狠掐死在水泥台阶上。手抖得不成样子，顺势抹了一脑门的虚汗。硬是没想到几十年练就的熟练身手，眨眼工夫就被算力比了下去。大家拼死拼活熬了大半辈子，往后的饭碗真能端得安稳不？';
@@ -148,6 +148,19 @@ function generateNativeDoubaoResult(
       hasSensitiveContent: false,
       sensitiveReason: '常规生活实况记录，未检测到血腥暴力内容，默认使用写实纪实抓拍画风',
       cartoon3dPrompt: `3D Pixar style cinematic 3:4 animated poster, high detailed 3D stylized human character, dramatic facial expression, hyper-detailed rendering, glowing lighting, text banner saying "${shortTitle}" at top.`,
+      titleSource: manualContext?.includes('口播') || manualContext?.includes('说') ? 'voiceover' : 'visual_action',
+      titleSourceDesc: manualContext?.includes('口播') || manualContext?.includes('说')
+        ? '从原声口播关键冲突金句中提炼'
+        : '无口播对白：依循纯画面核心动作（递卡尺/死撑扁担/掐灭烟头）提炼',
+      visualActionHook: '人物下意识动作肢体对峙瞬间',
+      voiceoverQuote: manualContext?.includes('口播') ? '这把年纪还能撑多久' : undefined,
+      characterFidelityMode: '1to1_faithful',
+      characterTraits1to1: '1:1 严格还原视频原片人物面容骨相、皮肤纹理、花白短发、粗糙双手与沾油工装，保持真实人物特征一致性',
+      recommendedFrameTimestamp: '00:46',
+      recommendedFrameReason: '高潮冲突反转瞬间：老工人手握卡尺愣住，眼神震颤，戏剧张力达到顶峰，爆款点击率转化最高',
+      titlePosition: 'top',
+      titlePositionReason: '人物面容与卡尺对峙集中在画面中下方，上方为车间机械背景留白，短标题置顶可避免遮挡人物表情与核心动作',
+      doubaoImg2ImgPrompt: `@豆包 请以我上传的这张视频截图为参考垫图，必须严格 1:1 还原原片中人物的长相面孔、五官轮廓、发型、皱纹体态与工作服装细节（严禁生成无关假人！），在保持原人物1:1特征的前提下，强化高对比度戏剧化光影，根据画面留白在视觉适宜位置（顶部或底部不遮挡人物处）醒目大字印上“${shortTitle}”，生成 3:4 比例超清封面海报！`,
     },
     viralTitles: [
       {
@@ -214,9 +227,24 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
    - 包含动作细节（actionDetail）与紧张/情绪指数（tension: 1-100）。
 3. 3:4 冲击力《写实夸张封面》方案（Cover）：
    - 核心原则：主要以读取视频内容，截取一张最适合做封面的高潮分镜图片进行文字封面设计加工。
-   - 必须设计一个 4~8 字的全中文短标题（shortTitle），字字千钧、冲击力爆棚（例如：“当场破防！”“直接撕破脸！”“他真下死手！”），强制排在 3:4 画面顶部居中黄金位置。
+   - 【极端重要：全流程自动化垫图 + 人物表情尽量全部采用原始自动截图真实神态】：
+     1) 本身为全自动化流水线，在抽取视频帧时系统已全自动完成高潮截帧并自动垫入底图（自动化垫图，无需人工二次截图上传）；
+     2) 封面设计画板直接以该爆款截图为真实底图，【人物表情与神态必须尽量全部采用原始自动截帧中的真实微表情】（如真实的眼神震颤、咬牙紧绷、惊愕反转的下意识面部微表情），绝对严禁凭空构想无关假人假脸！人物骨相、五官、发型、皱纹与神态必须与原始自动截帧完全一致；
+     3) 输出的 characterExpression 必须以“采用原片自动截帧真实面容与表情：……”详细描述原始截帧中真实人物的神态；
+     4) 输出的 doubaoImg2ImgPrompt 必须明确声明以该自动截帧为底图垫图，人物表情尽量都采用原始自动截图神态，严禁生成假人；
+   - 【短标题双轨自适应机制（口播金句 OR 画面动作）】：
+     自媒体视频情况不同：
+     1) 【若视频有口播/对白内容】：智能优先识别并捕捉最具有杀伤力、最反转、最激化矛盾的一句【核心口播金句/台词爆点】（例如：“他真敢开枪！”、“这单我不送了！”、“你算什么师傅！”、“别逼我动手！”），浓缩提炼为 4~8 字短标题；
+     2) 【若视频没有口播/无对白（如纯现场音、纯BGM、实况录屏或无声）】：则必须 100% 依循【纯画面视觉动作与道具交互】提炼（如：“反手递尺！”、“一杠救命！”、“火勺翻飞！”、“当场破防！”、“直接掀桌！”）；
+     3) 无论通过口播还是画面动作，短标题字数均必须为 4~8 个全中文汉字，冲击力爆棚，并明确标注提炼来源属性（titleSource: 'voiceover' | 'visual_action'）。
+   - 【短标题视觉位置自适应（根据封面视觉构图动态决定，绝非死板固定在顶部）】：
+     封面短标题的位置绝非千篇一律固定在顶部，必须根据所选截帧的【人物面部位置、肢体动作与留白分布】智能决定：
+     * 【顶部 (top)】：当人物主体/面孔或动作集中在画面中下方，上方有大片空间留白时，短标题放顶部，避开人物与道具；
+     * 【底部 (bottom)】：当画面为人物面部大特写、人物站立偏高、或核心动作冲突发生在上半部分时，短标题必须沉底置于画面下方留白处，【绝对严禁遮挡人物的眼睛、面部表情或核心道具】！
+     * 【中上/居中 (upper_middle / middle)】：当画面构图为上下两极分布（如天空与地面各有元素，中间有自然视觉间隙）或对称构图时，短标题可置于中上或居中位置形成视觉撞击点；
+     * 必须在 JSON 中输出 titlePosition ('top' | 'upper_middle' | 'middle' | 'bottom') 与 titlePositionReason（详细说明为何选该位置、如何避让面部与核心动作）。
    - 【极端重要：敏感/暴力/杂乱内容自动转 3D 仿真人卡通模式】：
-     若视频内容含有什么暴力、冲突拉扯、激烈打架、或血腥/杂乱等不适合真人写实的画面，封面形象必须自动降级/升级为【3D 卡通形式（仿真人 Pixar/CGI 风格，具有真实人类五官骨骼比例与逼真材质，但通过 3D 艺术化处理规避真实暴力审查）】！
+     若视频画面中含有什么暴力、冲突撕扯、激烈打架、或血腥/杂乱等不适合真人写实的画面，封面形象必须自动降级/升级为【3D 卡通形式（仿真人 Pixar/CGI 风格，具有真实人类五官骨骼比例与逼真材质，但通过 3D 艺术化处理规避真实暴力审查）】！
      若内容日常无违规，则默认使用《写实夸张的人物形象》（Photorealistic Dramatic Cinematic）。
    - 提供给豆包免费生图模型的高精度中英文生图 Prompt（包含 3D 仿真人与写实两种风格引导）。
 4. 4条热门爆款长标题（Viral Long Titles）：
@@ -334,6 +362,46 @@ app.post('/api/analyze-video', async (req: Request, res: Response) => {
                 cartoon3dPrompt: {
                   type: Type.STRING,
                   description: '3D仿真人高质感卡通CG海报专属Prompt',
+                },
+                titleSource: {
+                  type: Type.STRING,
+                  description: '短标题提炼来源: voiceover (口播对白金句) 或 visual_action (纯画面动作交互)',
+                },
+                titleSourceDesc: {
+                  type: Type.STRING,
+                  description: '提炼短标题的具体来源说明（如：从口播原话提炼/依循双手死撑扁担动作提炼）',
+                },
+                voiceoverQuote: {
+                  type: Type.STRING,
+                  description: '若视频有口播，记录对应的原话对白台词',
+                },
+                visualActionHook: {
+                  type: Type.STRING,
+                  description: '若依据画面提炼，记录对应的画面核心视觉动作',
+                },
+                characterTraits1to1: {
+                  type: Type.STRING,
+                  description: '严格从视频截图中提取的1:1人物五官骨骼、发型、衣服工装与细节特征，供垫图保持角色一致性',
+                },
+                recommendedFrameTimestamp: {
+                  type: Type.STRING,
+                  description: '最容易引爆点击率的爆款高潮截图时间戳，如 00:46',
+                },
+                recommendedFrameReason: {
+                  type: Type.STRING,
+                  description: '推荐该时间截帧作为爆款封面的理由',
+                },
+                doubaoImg2ImgPrompt: {
+                  type: Type.STRING,
+                  description: '以该截帧为垫图的豆包图生图1:1还原指令',
+                },
+                titlePosition: {
+                  type: Type.STRING,
+                  description: '根据画面构图智能决定的短标题排版位置: top (顶部留白), upper_middle (中上冲突焦点), middle (居中焦点), bottom (底部避让人脸与动作)',
+                },
+                titlePositionReason: {
+                  type: Type.STRING,
+                  description: '为什么将短标题放在该视觉位置的原因，如何避免遮挡人物面部或核心动作',
                 },
               },
               required: ['shortTitle', 'characterExpression', 'visualDescription', 'promptEnglish'],

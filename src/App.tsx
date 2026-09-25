@@ -44,21 +44,28 @@ export default function App() {
       timestamp: 8,
       formattedTime: '00:08',
       dataUrl: generateSampleFrameSvg('factory-patrol', '00:08', 'realistic'),
+      viralScore: 65,
     },
     {
       timestamp: 24,
       formattedTime: '00:24',
       dataUrl: generateSampleFrameSvg('factory-patrol', '00:24', 'realistic'),
+      viralScore: 88,
     },
     {
       timestamp: 46,
       formattedTime: '00:46',
       dataUrl: generateSampleFrameSvg('factory-patrol', '00:46', 'realistic'),
+      viralScore: 98,
+      isRecommendedCover: true,
+      viralReason: '戏剧冲突最高潮点：老工匠递出卡尺与机械臂对峙，眼神极度震撼，点击率最高！',
+      characterDetail: '1:1 严格还原老钳工真实骨相五官、皱纹胡茬、花白头发与沾油工装',
     },
     {
       timestamp: 75,
       formattedTime: '01:15',
       dataUrl: generateSampleFrameSvg('factory-patrol', '01:15', 'realistic'),
+      viralScore: 92,
     },
   ]);
 
@@ -83,7 +90,7 @@ export default function App() {
     coverDesign: {
       shortTitle: SAMPLE_VIDEOS[0].mockShortTitle,
       characterExpression:
-        '老钳工眉头紧锁，眼神震颤，满是油污的手指紧握扳手，震惊与不甘写满整张写实面孔',
+        '采用原片自动截帧真实面容与表情：老钳工眉头紧锁，眼神震颤，满是油污的手指紧握卡尺，100%沿用原片真实表情与肢体，未经任何虚构变造',
       visualDescription:
         '工业车间重度景深、高动态冷蓝工业激光与昏黄暖光对撞、粗粝纪实胶片质感',
       promptChinese:
@@ -96,6 +103,13 @@ export default function App() {
       sensitiveReason: '常规生产车间测试，无暴力血腥内容，默认使用视频分镜实况写实截帧',
       cartoon3dPrompt:
         '@豆包 生成一张3:4比例的3D Pixar卡通风格老钳工海报，逼真3D动画角色特写，瞪大眼睛震惊神情，顶部大字印上“当场破防！”',
+      characterFidelityMode: '1to1_faithful',
+      characterTraits1to1: '1:1 严格还原老钳工真实面孔骨相、花白短发、额头汗水油污、粗糙工装，保持原片真实质感，严禁换成假人',
+      recommendedFrameTimestamp: '00:46',
+      recommendedFrameReason: '全片冲突最高潮：卡尺突袭对峙机械臂，老工人眼神震颤，点击率转化最高！',
+      titlePosition: 'top',
+      titlePositionReason: '人物面容与卡尺对峙集中在画面中下方，上方车间背景留白充足，短标题置顶可避免遮挡人物表情与核心动作',
+      doubaoImg2ImgPrompt: `@豆包 请以我上传的这张视频截图为垫图参考（图生图）：必须严格 1:1 还原截图中人物的真实面孔、五官骨骼、发型发色、粗糙皮肤质感与工装衣着（严禁生成无关假人！），在保持 1:1 真实角色一致性的基础上，强化电影级光影对比与瞳孔面部戏剧震撼神态，根据画面留白在视觉适宜位置（顶部或底部不遮挡人物处）醒目大字印上“当场破防！”，生成 3:4 比例超清海报！`,
     },
     viralTitles: SAMPLE_VIDEOS[0].mockViralTitles,
     viewerComment: SAMPLE_VIDEOS[0].mockViewerComment,
@@ -124,9 +138,9 @@ export default function App() {
       const { duration, durationFormatted, frames } = await extractVideoFrames(file, 6);
       setExtractedFrames(frames);
       if (frames.length > 0) {
-        // Choose middle/high tension frame (around 60% mark) as default cover frame
-        const bestIndex = Math.min(2, frames.length - 1);
-        setSelectedCoverImage(frames[bestIndex].dataUrl);
+        // Automatically adopt the climax frame as the automated underlay!
+        const bestFrame = frames.find((f) => f.isRecommendedCover) || frames[Math.min(2, frames.length - 1)];
+        setSelectedCoverImage(bestFrame.dataUrl);
       }
       setVideoMetadata({
         name: file.name,
@@ -156,16 +170,30 @@ export default function App() {
     setCustomVideoFile(null);
     setVideoUrl(null);
 
-    // Build preset frames
-    const mockFrames: ExtractedFrame[] = sample.mockTimeline.map((item) => ({
+    // Find highest tension index
+    let highestTensionIdx = 0;
+    let maxTension = -1;
+    sample.mockTimeline.forEach((t, i) => {
+      if (t.tension > maxTension) {
+        maxTension = t.tension;
+        highestTensionIdx = i;
+      }
+    });
+
+    // Build preset frames with viral scores
+    const mockFrames: ExtractedFrame[] = sample.mockTimeline.map((item, idx) => ({
       timestamp: item.timeSec,
       formattedTime: item.timestamp,
       dataUrl: generateSampleFrameSvg(sample.id, item.timestamp, 'realistic'),
+      viralScore: item.tension,
+      isRecommendedCover: idx === highestTensionIdx,
+      viralReason: idx === highestTensionIdx ? '全片冲突最高潮瞬间 · 戏剧性对峙顶点，最易引爆点击' : undefined,
+      characterDetail: '1:1 提取并还原视频真实人物长相、发型发色与衣着质感',
     }));
     setExtractedFrames(mockFrames);
 
-    // Pick tension climax frame
-    const bestFrame = mockFrames[2] || mockFrames[0];
+    // Pick highest viral tension frame
+    const bestFrame = mockFrames[highestTensionIdx] || mockFrames[0];
     setSelectedCoverImage(bestFrame.dataUrl);
     setCartoon3dImage(generateSampleFrameSvg(sample.id, bestFrame.formattedTime, '3d-cartoon'));
 
@@ -190,6 +218,13 @@ export default function App() {
         hasSensitiveContent: false,
         sensitiveReason: '常规实况记录，未检测到暴力违规画面',
         cartoon3dPrompt: `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，画面顶部正中央印上全中文短标题“${sample.mockShortTitle}”。`,
+        characterFidelityMode: '1to1_faithful',
+        characterTraits1to1: '1:1 提取并还原视频真实人物长相、发型发色与衣着质感，防假人脸崩',
+        recommendedFrameTimestamp: bestFrame.formattedTime,
+        recommendedFrameReason: '全片冲突最高潮瞬间 · 戏剧性对峙顶点，最易引爆点击',
+        titlePosition: 'top',
+        titlePositionReason: '全片冲突最高潮瞬间：人物面容与动作聚焦在中下部，上方留白充足，短标题置顶避让人脸与手部动作',
+        doubaoImg2ImgPrompt: `@豆包 请以我上传的这张视频截图为垫图参考（图生图）：必须严格 1:1 还原截图中人物的真实面孔、五官骨骼、发型发色、粗糙皮肤质感与工装衣着（严禁生成无关假人！），在保持 1:1 真实角色一致性的基础上，强化电影级光影对比与瞳孔面部戏剧震撼神态，根据画面留白在视觉适宜位置（顶部或底部不遮挡人物处）醒目大字印上“${sample.mockShortTitle}”，生成 3:4 比例超清海报！`,
       },
       viralTitles: sample.mockViralTitles,
       viewerComment: sample.mockViewerComment,
@@ -265,6 +300,16 @@ export default function App() {
         result.coverDesign.styleMode = '3d-cartoon';
         result.coverDesign.hasSensitiveContent = true;
         result.coverDesign.sensitiveReason = '检测到可能含有打斗/冲突画面，系统已自动升级为【3D仿真人卡通模式】以避险防封';
+      }
+
+      // Automatically select the recommended viral frame if found
+      if (result.coverDesign?.recommendedFrameTimestamp) {
+        const matched = extractedFrames.find(
+          (f) => f.formattedTime === result.coverDesign.recommendedFrameTimestamp
+        );
+        if (matched) {
+          setSelectedCoverImage(matched.dataUrl);
+        }
       }
 
       setAnalysisResult(result);
@@ -353,16 +398,20 @@ export default function App() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-semibold text-white">视频分镜截取与安全机制：</span>
-            <span>以截取真实视频画面做封面，遇暴力/敏感画面自动转为3D卡通仿真人降敏避险</span>
+            <span className="font-semibold text-white">爆款截帧与1:1人物还原：</span>
+            <span>抽取全片最易爆款的高潮截图做底图，严格1:1还原视频真实人物长相与神态</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400">
             <span className="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
-              3D仿真人降敏
+              1:1人物真实还原 (防假人)
             </span>
-            <span className="text-amber-400/90 font-medium">严禁词: 铁蛋 / 视频中 / 看完视频</span>
-            <span className="text-indigo-400/90 font-medium">语言调性: 四川方言短句</span>
-            <span className="text-rose-400/90 font-medium">评论标题严格 ≤ 25 字</span>
+            <span className="text-amber-400 font-semibold bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded">
+              智能爆款选帧 (高潮瞬间)
+            </span>
+            <span className="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/60 px-2 py-0.5 rounded">
+              3D仿真人避险
+            </span>
+            <span className="text-rose-400/90 font-medium">严禁词: 铁蛋/视频/看完视频</span>
           </div>
         </div>
 
@@ -547,13 +596,25 @@ export default function App() {
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                         <span className="text-amber-300 font-medium">
-                          读取视频截取最佳分镜 + 强制嵌入中文短标题
+                          抽取视频中最易爆款的高潮截图做封面底图
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span className="text-emerald-300 font-medium">
+                          严格 1:1 还原视频原片人物面容与衣着 (防假人脸崩)
                         </span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
                         <span className="text-sky-300 font-medium">
-                          敏感/暴力杂乱画面自动转3D仿真人卡通避险
+                          双轨短标题：有口播抓对白金句，无口播跟画面动作
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                        <span className="text-indigo-300 font-medium">
+                          短标题位置依画面构图动态决定 (顶部/中上/居中/底部防挡脸)
                         </span>
                       </li>
                       <li className="flex items-center gap-1.5">

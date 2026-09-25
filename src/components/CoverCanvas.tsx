@@ -11,6 +11,15 @@ import {
   Smile,
   Layers,
   Sparkle,
+  Mic,
+  Volume2,
+  Edit3,
+  UserCheck,
+  Flame,
+  Crown,
+  MoveVertical,
+  Eye,
+  Sliders,
 } from 'lucide-react';
 import { CoverDesign, ExtractedFrame } from '../types';
 
@@ -99,17 +108,42 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
   const [artMode, setArtMode] = useState<'realistic' | '3d-cartoon'>(
     coverDesign.styleMode || 'realistic'
   );
+
+  // Dual-track Title Source: 'visual_action' (无口播，纯看画面动作) vs 'voiceover' (有口播，提炼对白金句)
+  const [titleSourceMode, setTitleSourceMode] = useState<'visual_action' | 'voiceover'>(
+    coverDesign.titleSource === 'voiceover' ? 'voiceover' : 'visual_action'
+  );
+  const [currentShortTitle, setCurrentShortTitle] = useState<string>(
+    coverDesign.shortTitle || '当场破防！'
+  );
+
+  // Dynamic Visual Composition Title Position: 'top' | 'upper_middle' | 'middle' | 'bottom'
+  const [titlePosition, setTitlePosition] = useState<'top' | 'upper_middle' | 'middle' | 'bottom'>(
+    coverDesign.titlePosition || 'top'
+  );
+  const [customOffsetY, setCustomOffsetY] = useState<number>(0);
+
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedDoubaoDraw, setCopiedDoubaoDraw] = useState(false);
   const [copied3dPrompt, setCopied3dPrompt] = useState(false);
+  const [copied1to1Prompt, setCopied1to1Prompt] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
 
-  // Sync art mode if coverDesign changes
+  // Sync art mode & title if coverDesign changes
   useEffect(() => {
     if (coverDesign.styleMode) {
       setArtMode(coverDesign.styleMode);
     }
-  }, [coverDesign.styleMode]);
+    if (coverDesign.shortTitle) {
+      setCurrentShortTitle(coverDesign.shortTitle);
+    }
+    if (coverDesign.titleSource) {
+      setTitleSourceMode(coverDesign.titleSource === 'voiceover' ? 'voiceover' : 'visual_action');
+    }
+    if (coverDesign.titlePosition) {
+      setTitlePosition(coverDesign.titlePosition);
+    }
+  }, [coverDesign]);
 
   const drawCover = () => {
     const canvas = canvasRef.current;
@@ -198,16 +232,42 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 
-      // Top Warning Badge
+      // 2. Dynamic positioning according to visual composition (依画面构图智能决定，避让人脸与核心动作)
       const is3D = artMode === '3d-cartoon';
       const badgeText = is3D
         ? '3D仿真人卡通 · 避险降敏'
         : coverDesign.badgeText || '现场实录 · 深度反转';
 
+      let baseBannerY = 160;
+      let baseBadgeY = 70;
+      let expBoxY = height - 310;
+      let expBoxHeight = 170;
+
+      if (titlePosition === 'upper_middle') {
+        baseBannerY = 360;
+        baseBadgeY = 275;
+        expBoxY = height - 260;
+        expBoxHeight = 150;
+      } else if (titlePosition === 'middle') {
+        baseBannerY = 510;
+        baseBadgeY = 425;
+        expBoxY = height - 250;
+        expBoxHeight = 140;
+      } else if (titlePosition === 'bottom') {
+        baseBannerY = 780;
+        baseBadgeY = 695;
+        // When title is at bottom, move expression box to top to keep character face clean & visible
+        expBoxY = 65;
+        expBoxHeight = 150;
+      }
+
+      const bannerHeight = 170;
+      const bannerY = Math.max(60, Math.min(height - 240, baseBannerY + customOffsetY));
+      const badgeY = Math.max(10, Math.min(height - 310, baseBadgeY + customOffsetY));
+
       ctx.font = 'bold 28px sans-serif';
       const badgeWidth = ctx.measureText(badgeText).width + 50;
       const badgeX = (width - badgeWidth) / 2;
-      const badgeY = 70;
 
       ctx.fillStyle = is3D ? '#0284c7' : theme.badgeBg;
       ctx.beginPath();
@@ -224,12 +284,8 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ctx.textBaseline = 'middle';
       ctx.fillText(badgeText, width / 2, badgeY + 26);
 
-      // 3. MANDATORY CHINESE SHORT TITLE (强制嵌入全中文短标题)
-      const title = coverDesign.shortTitle || '当场破防！';
-
-      // Title Banner Background container
-      const bannerHeight = 170;
-      const bannerY = 160;
+      // 3. MANDATORY CHINESE SHORT TITLE (根据封面视觉构图动态决定位置，避让人脸与核心动作)
+      const title = currentShortTitle || coverDesign.shortTitle || '当场破防！';
 
       ctx.save();
       // Slight aggressive tilt for impact (-2 degrees)
@@ -286,10 +342,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
       ctx.restore();
 
-      // 4. Character Expression / 3D Stylized Label (Middle/Lower Area)
-      const expBoxY = height - 310;
-      const expBoxHeight = 170;
-
+      // 4. Character Expression / 3D Stylized Label (位置根据标题自适应排布)
       ctx.fillStyle = 'rgba(10, 15, 25, 0.85)';
       ctx.beginPath();
       ctx.roundRect(40, expBoxY, width - 80, expBoxHeight, 16);
@@ -305,7 +358,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.fillText(
-        is3D ? '【3D仿真人卡通神态 · 规避违规】' : '【视频实况截取 · 写实夸张神态】',
+        is3D ? '【3D仿真人卡通神态 · 规避违规】' : '【原片自动截帧垫图 · 真实人物表情】',
         65,
         expBoxY + 22
       );
@@ -316,7 +369,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       const maxTextWidth = width - 150;
       const desc = is3D
         ? `3D Pixar仿真人质感：${coverDesign.characterExpression} (避免真人敏感内容违规)`
-        : coverDesign.characterExpression || '极度震撼神情，戏剧张力拉满，写实电影级质感';
+        : coverDesign.characterExpression || '沿用原片自动截帧真实面容与表情：眼神震颤，下意识动作紧绷，100%源自原片实况抓拍';
 
       // Simple word wrapping
       const chars = desc.split('');
@@ -374,7 +427,7 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
   useEffect(() => {
     drawCover();
-  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode]);
+  }, [coverDesign, frameImage, cartoon3dImage, selectedTheme, artMode, currentShortTitle, titlePosition, customOffsetY]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -398,17 +451,52 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
       ? '3D Pixar风格的仿真人高品质CG动画封面海报（规避暴力杂乱真实违规）'
       : '电影级写实夸张人物封面海报';
 
-    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：画面顶部正中央用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，神态极其戏剧化夸张震撼：${coverDesign.characterExpression}；强对比度高动态光影，极具视觉冲击力！`;
+    const positionDesc =
+      titlePosition === 'bottom'
+        ? '画面底部留白处（沉底排版，严禁遮挡画面中人物面部、眼睛或核心动作）'
+        : titlePosition === 'middle'
+        ? '画面正中视觉冲击留白位'
+        : titlePosition === 'upper_middle'
+        ? '画面中上留白处'
+        : '画面顶部留白处（置顶排版，避免遮挡中下方人物动作）';
+
+    const doubaoDrawPrompt = `@豆包 帮我画一张3:4比例的${stylePrefix}：在${positionDesc}用超大加粗醒目黑白红高对比度艺术字体印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”；画面主体为特写人物，神态极其戏剧化夸张震撼：${coverDesign.characterExpression}；强对比度高动态光影，极具视觉冲击力！`;
     navigator.clipboard.writeText(doubaoDrawPrompt);
     setCopiedDoubaoDraw(true);
     setTimeout(() => setCopiedDoubaoDraw(false), 2500);
   };
 
   const handleCopy3dPrompt = () => {
-    const prompt3d = `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，画面顶部正中央印上全中文短标题“${coverDesign.shortTitle || '当场破防！'}”。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
+    const positionDesc =
+      titlePosition === 'bottom' ? '画面底部留白处' : '画面顶部正中央';
+    const prompt3d = `@豆包 请用3D卡通仿真人形式生成3:4封面：画面人物为逼真3D动画角色，神情夸张，避开血腥暴力，在${positionDesc}印上全中文短标题“${currentShortTitle || coverDesign.shortTitle || '当场破防！'}”。提示词：${coverDesign.cartoon3dPrompt || '3D stylized CGI character, Pixar style, high details, cinematic lighting.'}`;
     navigator.clipboard.writeText(prompt3d);
     setCopied3dPrompt(true);
     setTimeout(() => setCopied3dPrompt(false), 2500);
+  };
+
+  const handleCopy1to1Prompt = () => {
+    const positionDesc =
+      titlePosition === 'bottom'
+        ? '画面底部留白处（沉底排版，严禁遮挡人物面部、眼睛或核心道具）'
+        : titlePosition === 'middle'
+        ? '画面正中视觉冲击留白处'
+        : titlePosition === 'upper_middle'
+        ? '画面中上留白处'
+        : '画面顶部正中央留白处（置顶排版，避免遮挡中下部人物动作）';
+
+    const prompt1to1 = `@豆包 请以我上传的这张视频原片自动截图为垫图底图（图生图）：必须严格 1:1 还原截图中人物的原始真实面孔、眼神微表情、五官骨相与服装细节（人物表情尽量都采用原始自动截图中的真实神态，严禁生成任何无关假人！），在保持 1:1 原片人物神态一致性的基础上，强化电影级光影对比与瞳孔高光，在${positionDesc}醒目大字印上“${currentShortTitle}”，生成 3:4 比例超清海报！`;
+    navigator.clipboard.writeText(prompt1to1);
+    setCopied1to1Prompt(true);
+    setTimeout(() => setCopied1to1Prompt(false), 2500);
+  };
+
+  const handleDownloadRawUnderlay = () => {
+    if (!frameImage) return;
+    const link = document.createElement('a');
+    link.download = `原片自动截帧垫图_${coverDesign.recommendedFrameTimestamp || '高潮分镜'}.jpg`;
+    link.href = frameImage;
+    link.click();
   };
 
   return (
@@ -452,23 +540,224 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
           <Download className="w-4 h-4" />
           下载 3:4 高清封面 (900×1200)
         </button>
+
+        {/* Export Raw Captured Snapshot Underlay */}
+        {frameImage && (
+          <button
+            onClick={handleDownloadRawUnderlay}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs py-2 px-3 rounded-xl border border-slate-700 transition active:scale-[0.98]"
+            title="导出当前全自动截取的原片高清底图，无文字覆盖"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            导出当前自动截帧原图 (纯净无字垫图)
+          </button>
+        )}
       </div>
 
       {/* Control & Details Side Panel */}
       <div className="flex-1 flex flex-col justify-between space-y-4">
         <div>
-          {/* Mandatory Short Title Highlight */}
-          <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-4 mb-4">
-            <div className="text-xs font-semibold text-amber-400 mb-1 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              封面核心爆点 · 全中文短标题（强制印于画面黄金位）
+          {/* Mandatory Short Title Highlight with Dual-Track Adaptation */}
+          <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-4 mb-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/20 pb-2.5">
+              <div className="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>3:4 封面短标题 · 双轨自适应设计</span>
+              </div>
+
+              {/* Dual-Track Source Switcher */}
+              <div className="flex items-center gap-1 bg-black/50 p-1 rounded-lg border border-amber-500/30 text-[11px]">
+                <button
+                  onClick={() => {
+                    setTitleSourceMode('visual_action');
+                    if (titleSourceMode === 'voiceover') {
+                      setCurrentShortTitle('当场破防！');
+                    }
+                  }}
+                  className={`px-2 py-1 rounded font-medium flex items-center gap-1 transition ${
+                    titleSourceMode === 'visual_action'
+                      ? 'bg-amber-500 text-black font-bold shadow'
+                      : 'text-amber-300/70 hover:text-white'
+                  }`}
+                >
+                  <Camera className="w-3 h-3" />
+                  无口播 · 纯画面动作
+                </button>
+                <button
+                  onClick={() => {
+                    setTitleSourceMode('voiceover');
+                    if (titleSourceMode === 'visual_action') {
+                      setCurrentShortTitle(coverDesign.voiceoverQuote ? `${coverDesign.voiceoverQuote.slice(0, 5)}！` : '真敢硬刚？');
+                    }
+                  }}
+                  className={`px-2 py-1 rounded font-medium flex items-center gap-1 transition ${
+                    titleSourceMode === 'voiceover'
+                      ? 'bg-sky-500 text-black font-bold shadow'
+                      : 'text-amber-300/70 hover:text-white'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" />
+                  有口播 · 提炼台词金句
+                </button>
+              </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black text-amber-200 tracking-wider">
-              {coverDesign.shortTitle || '当场破防！'}
+
+            {/* Current Short Title Big Banner & Live Edit */}
+            <div>
+              <div className="flex items-center justify-between mb-1 text-[11px] text-amber-300/80">
+                <span className="flex items-center gap-1">
+                  {titleSourceMode === 'voiceover' ? (
+                    <>
+                      <Volume2 className="w-3.5 h-3.5 text-sky-400" />
+                      当前来源：<strong>原声口播关键冲突金句</strong>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-3.5 h-3.5 text-amber-400" />
+                      当前来源：<strong>无口播现场 · 纯画面核心动作/道具反转</strong>
+                    </>
+                  )}
+                </span>
+                <span className="font-mono text-xs">
+                  {currentShortTitle.length} / 8 字 (建议 4~8 汉字)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={currentShortTitle}
+                    onChange={(e) => setCurrentShortTitle(e.target.value.slice(0, 10))}
+                    placeholder="输入或选择 4-8 字短标题..."
+                    className="w-full bg-slate-950/90 border-2 border-amber-500/60 focus:border-amber-400 text-amber-100 font-black text-xl sm:text-2xl px-3 py-2 rounded-xl focus:outline-none tracking-wider shadow-inner"
+                  />
+                  <Edit3 className="w-4 h-4 text-amber-400/60 absolute right-3 top-3.5 pointer-events-none" />
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-amber-300/70 mt-1">
-              字数短小精悍，视觉张力极强，直击下沉自媒体与全网用户第一眼神经
+
+            {/* Quick Candidate Preset Chips */}
+            <div>
+              <div className="text-[11px] text-amber-400/90 font-medium mb-1.5 flex items-center gap-1">
+                <span>⚡ 常用爆款短标题快速备选（点击即刻换上）：</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(titleSourceMode === 'visual_action'
+                  ? ['反手递尺！', '一杠救命！', '当场破防！', '火勺翻飞！', '直接掀桌！', '三秒打脸！']
+                  : ['真敢硬刚？', '这单我不接！', '卡尺不认人！', '凭啥算力强？', '别逼我动手！', '尊严砸了？']
+                ).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setCurrentShortTitle(t)}
+                    className={`text-xs px-2.5 py-1 rounded-lg border transition font-bold ${
+                      currentShortTitle === t
+                        ? 'bg-amber-400 text-black border-amber-300 shadow'
+                        : 'bg-black/40 border-amber-500/30 text-amber-200 hover:border-amber-400 hover:text-white'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-amber-300/70 leading-relaxed border-t border-amber-500/20 pt-2">
+              💡 自适应机制：<strong>有口播就抓金句，没口播就抓画面动作</strong>。标题实时同步绘制到 3:4 超清封面画板，无需人工二开！
             </p>
+          </div>
+
+          {/* Short Title Visual Position Controller: Dynamic based on visual composition */}
+          <div className="bg-slate-950/80 border border-amber-500/30 rounded-xl p-3 mb-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <MoveVertical className="w-3.5 h-3.5 text-amber-400" />
+                <span>短标题排版位置（依画面构图动态调整 · 避让人脸）</span>
+              </span>
+              <span className="text-[10px] font-mono bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">
+                {titlePosition === 'top'
+                  ? '🔝 顶部留白位'
+                  : titlePosition === 'upper_middle'
+                  ? '⬆️ 中上焦点位'
+                  : titlePosition === 'middle'
+                  ? '🎯 居中黄金位'
+                  : '⬇️ 底部沉底位 (防挡脸)'}
+              </span>
+            </div>
+
+            {/* 4 Position Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              {[
+                { id: 'top', label: '🔝 顶部留白', desc: '人物主体在中下部' },
+                { id: 'upper_middle', label: '⬆️ 中上焦点', desc: '视线汇聚偏上方' },
+                { id: 'middle', label: '🎯 居中黄金位', desc: '上下对称留白' },
+                { id: 'bottom', label: '⬇️ 底部沉底', desc: '★防遮挡人脸神技' },
+              ].map((pos) => (
+                <button
+                  key={pos.id}
+                  onClick={() => {
+                    setTitlePosition(pos.id as any);
+                    setCustomOffsetY(0);
+                  }}
+                  className={`px-2 py-1.5 rounded-lg border text-left transition flex flex-col ${
+                    titlePosition === pos.id
+                      ? 'bg-amber-500 text-black border-amber-400 font-bold shadow'
+                      : 'bg-black/50 border-slate-700 text-slate-300 hover:border-amber-400/60 hover:text-white'
+                  }`}
+                >
+                  <span className="text-xs font-semibold">{pos.label}</span>
+                  <span
+                    className={`text-[9px] ${
+                      titlePosition === pos.id ? 'text-black/80 font-medium' : 'text-slate-400'
+                    }`}
+                  >
+                    {pos.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Fine-tune Y offset Slider */}
+            <div className="flex items-center gap-3 pt-1 border-t border-slate-800 text-[11px] text-slate-300">
+              <span className="flex items-center gap-1 text-slate-400 flex-shrink-0">
+                <Sliders className="w-3 h-3 text-amber-400" />
+                垂直微调 (Y轴):
+              </span>
+              <input
+                type="range"
+                min={-120}
+                max={120}
+                step={5}
+                value={customOffsetY}
+                onChange={(e) => setCustomOffsetY(Number(e.target.value))}
+                className="flex-1 accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+              />
+              <span className="font-mono text-xs w-10 text-right text-amber-300">
+                {customOffsetY > 0 ? `+${customOffsetY}` : customOffsetY}px
+              </span>
+              {customOffsetY !== 0 && (
+                <button
+                  onClick={() => setCustomOffsetY(0)}
+                  className="text-[10px] text-slate-400 hover:text-white bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700"
+                >
+                  重置
+                </button>
+              )}
+            </div>
+
+            {/* Composition Tip */}
+            <div className="flex items-start gap-1.5 text-[11px] text-amber-200/80 bg-amber-950/30 p-2 rounded-lg border border-amber-500/20">
+              <Eye className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="leading-snug">
+                <strong>构图避让依据：</strong>
+                <span>
+                  {coverDesign.titlePositionReason ||
+                    (titlePosition === 'bottom'
+                      ? '已启用底部沉底排版：当人物面孔特写位于画面上方时，标题沉底确保眼神与五官表情 100% 完整可见！'
+                      : '当人物主体集中在中下部时，短标题置顶可充分利用背景自然留白，视觉冲击力最佳。')}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Mode Switcher: 视频实况写实 vs 3D卡通仿真人 */}
@@ -517,27 +806,28 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
             </p>
           </div>
 
-          {/* Video Frames Selector: 截取一张适合做封面的图片 */}
+          {/* Video Frames Selector: 截取最适爆款分镜并1:1还原人物 */}
           {availableFrames.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="mb-4 bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
                 <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Camera className="w-3.5 h-3.5 text-amber-400" />
-                  从视频中选取最适合的截帧作为封面底图：
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  智能爆款选帧 · 截取最具点击张力的一帧做封面 (1:1还原人物)：
                 </span>
                 {onSnapshotVideo && (
                   <button
                     onClick={onSnapshotVideo}
-                    className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                    className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 self-start sm:self-auto"
                   >
                     <Camera className="w-3 h-3" />
-                    截取播放器当前瞬间
+                    截取当前播放瞬时
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {availableFrames.map((f, i) => {
                   const isCurrent = frameImage === f.dataUrl;
+                  const isViralBest = f.isRecommendedCover || (f.viralScore && f.viralScore >= 96);
                   return (
                     <button
                       key={i}
@@ -547,22 +837,51 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
                       }}
                       className={`relative aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all group ${
                         isCurrent
-                          ? 'border-amber-400 ring-2 ring-amber-500/40 scale-105'
+                          ? 'border-amber-400 ring-2 ring-amber-500/40 scale-105 shadow-lg'
+                          : isViralBest
+                          ? 'border-rose-500/80 hover:border-rose-400'
                           : 'border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-600'
                       }`}
                     >
                       <img src={f.dataUrl} alt="frame" className="w-full h-full object-cover" />
+                      
+                      {/* Viral Climax Tag */}
+                      {isViralBest && (
+                        <span className="absolute top-0.5 left-0.5 bg-gradient-to-r from-rose-600 to-amber-600 text-white text-[8px] font-black px-1 rounded flex items-center gap-0.5 shadow">
+                          <Crown className="w-2.5 h-2.5" />
+                          爆款推荐
+                        </span>
+                      )}
+
+                      {/* Time stamp */}
                       <span className="absolute bottom-0.5 right-0.5 bg-black/80 font-mono text-[9px] text-white px-1 rounded">
                         {f.formattedTime}
                       </span>
+
+                      {/* Viral Tension Score */}
+                      {f.viralScore && (
+                        <span className="absolute bottom-0.5 left-0.5 bg-black/75 text-amber-300 text-[8px] font-mono px-1 rounded">
+                          {f.viralScore}分
+                        </span>
+                      )}
+
                       {isCurrent && (
-                        <span className="absolute top-0.5 left-0.5 bg-amber-500 text-black text-[9px] font-bold px-1 rounded">
+                        <span className="absolute top-0.5 right-0.5 bg-amber-500 text-black text-[9px] font-black px-1 rounded">
                           当前底图
                         </span>
                       )}
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Recommendation explanation */}
+              <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-300">
+                <span className="flex items-center gap-1 text-amber-300">
+                  <Flame className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                  <strong>爆款选帧逻辑：</strong>
+                  <span>{coverDesign.recommendedFrameReason || '精准定位全片冲突反转高潮点，情绪张力最大，最易引发停留点击！'}</span>
+                </span>
               </div>
             </div>
           )}
@@ -598,40 +917,81 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
             </div>
           </div>
 
-          {/* Character & Visual Specification */}
-          <div className="space-y-3 bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 text-xs">
-            <div>
-              <span className="text-slate-400 font-semibold">
-                {artMode === '3d-cartoon' ? '3D仿真人角色设计：' : '人物夸张写实神态：'}
-              </span>
-              <p className="text-slate-200 mt-0.5 leading-relaxed">
-                {coverDesign.characterExpression}
+          {/* 1:1 Character Fidelity Lock & Visual Specification */}
+          <div className="space-y-2.5 mb-4">
+            {/* 1:1 Character Fidelity Card & Automated Underlay */}
+            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 text-xs space-y-1.5">
+              <div className="flex items-center justify-between text-emerald-400 font-bold">
+                <span className="flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                  全自动流水线垫图 · 人物表情尽量采用原始自动截图
+                </span>
+                <span className="text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-600 font-mono">
+                  自动化垫图 · 原片真表情
+                </span>
+              </div>
+              <p className="text-slate-300 text-[11px] leading-relaxed pt-0.5">
+                {coverDesign.characterTraits1to1 || '本身是全自动化流程，在抽取视频帧时系统已全自动完成高潮截图并垫入底图。封面人物的面部轮廓、眼神、微表情与体态姿势尽量且严格沿用原始自动截图中的真实神态，避免任何虚假捏造！'}
               </p>
+              <div className="pt-1 border-t border-emerald-800/40 flex items-center justify-between text-[10px] text-emerald-300/80">
+                <span>原片高潮截帧已自动作为画板底图</span>
+                <span>严禁生成无关假人假表情</span>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-400 font-semibold">构图与光影张力：</span>
-              <p className="text-slate-300 mt-0.5 leading-relaxed">
-                {coverDesign.visualDescription}
-              </p>
+
+            {/* Character & Visual Specification */}
+            <div className="space-y-3 bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 text-xs">
+              <div>
+                <span className="text-slate-400 font-semibold">
+                  {artMode === '3d-cartoon' ? '3D仿真人角色设计：' : '原始自动截帧 · 人物真实表情与下意识神态：'}
+                </span>
+                <p className="text-slate-200 mt-0.5 leading-relaxed font-medium">
+                  {coverDesign.characterExpression}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-semibold">构图与光影张力：</span>
+                <p className="text-slate-300 mt-0.5 leading-relaxed">
+                  {coverDesign.visualDescription}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Copy Prompts for Doubao / Midjourney */}
         <div className="pt-2 space-y-2">
+          {/* Priority: 1:1 Character Faithful Image-to-Image Prompt */}
+          <button
+            onClick={handleCopy1to1Prompt}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 hover:from-teal-500 hover:to-green-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98]"
+          >
+            {copied1to1Prompt ? (
+              <>
+                <Check className="w-4 h-4" />
+                已复制豆包垫图1:1还原指令 (自动锁死原片截帧人物表情)
+              </>
+            ) : (
+              <>
+                <UserCheck className="w-4 h-4 text-emerald-200" />
+                一键复制【豆包自动垫图 1:1 还原指令】(人物表情尽量采用原始截图)
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleCopyDoubaoDraw}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
           >
             {copiedDoubaoDraw ? (
               <>
                 <Check className="w-4 h-4" />
-                已复制豆包生图指令 (直接在豆包对话框粘贴)
+                已复制豆包常规文生图指令
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-emerald-200" />
-                一键复制【发给豆包的生图指令】(利用豆包免费额度)
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                复制【豆包免费生图指令】(包含3:4比例与顶部短标题)
               </>
             )}
           </button>
@@ -657,17 +1017,17 @@ export const CoverCanvas: React.FC<CoverCanvasProps> = ({
 
           <button
             onClick={handleCopyPrompt}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold py-2 px-4 rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-300 border border-slate-800 text-[11px] font-medium py-1.5 px-4 rounded-xl transition-colors"
           >
             {copiedPrompt ? (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
                 已复制中英双语 Prompt
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 text-slate-400" />
-                复制 3:4 封面生图 Prompt (中/英双语)
+                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                复制通用生图 Prompt (中/英文)
               </>
             )}
           </button>

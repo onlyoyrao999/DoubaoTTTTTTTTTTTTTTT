@@ -28,6 +28,17 @@ export interface CoverDesign {
   hasSensitiveContent?: boolean;
   sensitiveReason?: string;
   cartoon3dPrompt?: string;
+  titleSource?: 'voiceover' | 'visual_action' | 'hybrid';
+  titleSourceDesc?: string;
+  voiceoverQuote?: string;
+  visualActionHook?: string;
+  characterFidelityMode?: '1to1_faithful' | 'stylized';
+  characterTraits1to1?: string;
+  doubaoImg2ImgPrompt?: string;
+  recommendedFrameTimestamp?: string;
+  recommendedFrameReason?: string;
+  titlePosition?: 'top' | 'upper_middle' | 'middle' | 'bottom';
+  titlePositionReason?: string;
 }
 
 export interface ViralTitle {
@@ -55,4 +66,8 @@ export interface ExtractedFrame {
   timestamp: number;
   formattedTime: string;
   dataUrl: string;
+  viralScore?: number;
+  isRecommendedCover?: boolean;
+  viralReason?: string;
+  characterDetail?: string;
 }
