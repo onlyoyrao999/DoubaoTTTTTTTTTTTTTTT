@@ -287,19 +287,26 @@ export default function App() {
 
       const result = resData.data;
 
-      // Check if violent or sensitive content detected -> trigger 3D cartoon mode
+      // Red line detection: only trigger 3D simulation avatar if touching platform red lines
       const isSensitive =
         result.coverDesign?.hasSensitiveContent ||
         manualNote.includes('打架') ||
         manualNote.includes('打斗') ||
         manualNote.includes('暴力') ||
+        manualNote.includes('流血') ||
+        manualNote.includes('凶器') ||
         videoMetadata.name.includes('打架') ||
-        videoMetadata.name.includes('冲突');
+        videoMetadata.name.includes('暴力') ||
+        videoMetadata.name.includes('斗殴');
 
       if (isSensitive) {
         result.coverDesign.styleMode = '3d-cartoon';
         result.coverDesign.hasSensitiveContent = true;
-        result.coverDesign.sensitiveReason = '检测到可能含有打斗/冲突画面，系统已自动升级为【3D仿真人卡通模式】以避险防封';
+        result.coverDesign.sensitiveReason = '检测到触碰平台审核红线（可能含有打斗/流血/暴力等违禁画面），直接发实况截图会被封禁！系统自动启动【以图生图生成3D仿真人】降敏规避违规。';
+      } else {
+        result.coverDesign.styleMode = 'realistic';
+        result.coverDesign.hasSensitiveContent = false;
+        result.coverDesign.sensitiveReason = '未触碰平台审核红线：无需重新AI生图，直接采用原片自动截图并打上大字短标题直出，100%还原生活实况！';
       }
 
       // Automatically select the recommended viral frame if found
